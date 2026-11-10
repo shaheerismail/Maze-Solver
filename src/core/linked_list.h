@@ -90,6 +90,7 @@ public:
     // current element and advances. Used for drawing and for BST in-order dumps.
     class Iterator {
     public:
+        Iterator() : node_(0) {}      // empty cursor (hasNext() false)
         bool hasNext() const { return node_ != 0; }
         const T& next()
         {

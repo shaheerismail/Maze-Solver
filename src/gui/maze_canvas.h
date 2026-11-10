@@ -1,0 +1,38 @@
+#pragma once
+// MazeCanvas — the drawing surface. paintEvent paints the current matrix plus
+// whichever replay overlays are active (generation cursor, BFS frontier,
+// checked edge, route). It owns NO core data: every pointer here is a
+// non-owning view into a MainWindow member.
+
+#include <QWidget>
+#include "maze_matrix.h"
+#include "linked_list.h"
+
+class QPaintEvent;
+
+class MazeCanvas : public QWidget {
+    Q_OBJECT
+public:
+    explicit MazeCanvas(QWidget* parent = 0);
+
+    void setMaze(const MazeMatrix* maze);
+    void setGenerationCursor(int row, int col);                     // -1 hides it
+    void setVisited(const LinkedList<int>* vertices, int count);    // dequeued so far
+    void setCurrentEdge(int fromVertex, int toVertex);              // -1,-1 hides it
+    void setRoute(const LinkedList<int>* route, int count);         // route tail so far
+    void resetOverlays();
+
+protected:
+    void paintEvent(QPaintEvent* event);
+
+private:
+    const MazeMatrix* maze_;
+    int cursorRow_;
+    int cursorCol_;
+    const LinkedList<int>* visited_;
+    int visitedCount_;
+    int edgeFrom_;
+    int edgeTo_;
+    const LinkedList<int>* route_;
+    int routeCount_;
+};
