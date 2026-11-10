@@ -1,0 +1,9 @@
+MAZE_V1
+rows 4
+cols 5
+seed 12345
+extra 2
+8 5 5 5 3
+C 3 9 1 2
+B A A A A
+C 4 6 C 2
