@@ -5,6 +5,7 @@ void testMatrix();
 void testLists();
 void testGenerator();
 void testGraph();
+void testBfs();
 
 int main()
 {
@@ -16,5 +17,7 @@ int main()
     testGenerator();
     testBegin("graph");
     testGraph();
+    testBegin("bfs");
+    testBfs();
     return testSummary();
 }
