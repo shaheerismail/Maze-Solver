@@ -3,6 +3,7 @@
 // One function per suite; each is added in its roadmap phase.
 void testMatrix();
 void testLists();
+void testGenerator();
 
 int main()
 {
@@ -10,5 +11,7 @@ int main()
     testMatrix();
     testBegin("lists");
     testLists();
+    testBegin("generator");
+    testGenerator();
     return testSummary();
 }
