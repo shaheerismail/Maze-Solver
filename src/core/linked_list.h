@@ -75,6 +75,33 @@ public:
     bool isEmpty() const { return size_ == 0; }
     int size() const { return size_; }
 
+    bool contains(const T& value) const   // linear scan for an equal value
+    {
+        for (Node* n = head_; n != 0; n = n->next)
+            if (n->value == value)
+                return true;
+        return false;
+    }
+
+    bool removeValue(const T& value)      // unlink the FIRST matching node
+    {
+        Node* prev = 0;
+        for (Node* n = head_; n != 0; prev = n, n = n->next) {
+            if (n->value == value) {
+                if (prev == 0)
+                    head_ = n->next;
+                else
+                    prev->next = n->next;
+                if (tail_ == n)
+                    tail_ = prev;
+                delete n;
+                --size_;
+                return true;
+            }
+        }
+        return false;
+    }
+
     void clear()
     {
         while (head_ != 0) {

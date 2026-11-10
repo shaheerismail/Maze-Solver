@@ -182,4 +182,23 @@ void testBfs()
     CHECK_EQ(route5.size(), 1);
     LinkedList<int>::Iterator only = route5.iterator();
     CHECK_EQ(only.next(), 0);
+
+    // T23b: blocked-aware solve — a "mine" choking the only corridor kills
+    // the route, while the plain solve still succeeds on the same maze
+    MazeMatrix corridor;
+    corridor.reset(1, 3);
+    corridor.removeWall(0, 0, MazeMatrix::WALL_E);
+    corridor.removeWall(0, 1, MazeMatrix::WALL_E);
+    MazeGraph cg;
+    cg.buildFromMatrix(corridor);
+    BfsSolver cs;
+    LinkedList<int> croute;
+    CHECK(cs.solve(cg, 0, 2, croute));
+    LinkedList<int> mined;
+    mined.pushBack(1);
+    LinkedList<int> broute;
+    CHECK(!cs.solve(cg, 0, 2, broute, &mined));
+    CHECK(broute.isEmpty());
+    mined.clear();
+    CHECK(cs.solve(cg, 0, 2, broute, &mined));
 }

@@ -33,6 +33,18 @@ copy D:\qt-installed\Tools\mingw1310_64\bin\libgcc_s_seh-1.dll,libstdc++-6.dll,l
 4. Reach the **blue notch at the bottom-right** to win: the BFS shortest route is drawn in red
    and the status bar compares your move count with the optimum.
 
+### Mines, keys and stars
+
+- Every generated/loaded maze is seeded with **pixel-art bombs** and **pixel-art keys**;
+  the layout is deterministic per seed (same seed = same field, like the walls).
+- Walk onto a key to collect it. Step onto a bomb and the run ends instantly
+  with an explosion burst — the status bar shows your keys collected and star tier.
+- Placement is verified with the project's own BFS: a bomb candidate is rejected
+  if it would cut the exit OR any key off, so the game is always winnable.
+- **Star system at the finish:** all keys -> 3 stars, half -> 2, a quarter -> 1,
+  none -> 0. Plan the route: grab as many keys as you dare, then find the exit.
+- Even **Solve (BFS)** respects the mines: its red route is the bomb-safe optimum.
+
 ## Console tests (226 checks)
 
 ```

@@ -2,6 +2,62 @@
 #include <QKeyEvent>
 #include <QPainter>
 
+namespace {
+// 8x8 hand-drawn pixel sprites (arcade style, no image files needed).
+// B = bomb body, F = fuse, S = lit-wick spark, K = key metal.
+const char* kBombPix[8] = {
+    "......S.",
+    ".....S..",
+    "....F...",
+    "...F....",
+    "..BBBB..",
+    ".BBBBBB.",
+    ".BBBBBB.",
+    "..BBBB..",
+};
+const char* kKeyPix[8] = {
+    ".KKK....",
+    ".K.K....",
+    ".KKK....",
+    "..K.....",
+    "..KK....",
+    "..K.....",
+    "..KK....",
+    "..K.....",
+};
+
+QColor spriteColorFor(char c)
+{
+    switch (c) {
+        case 'B': return QColor(25, 25, 25);
+        case 'F': return QColor(120, 90, 50);
+        case 'S': return QColor(255, 150, 0);
+        case 'K': return QColor(240, 190, 40);
+    }
+    return QColor();
+}
+
+void drawPixelSprite(QPainter& painter, const char* pixels[8], int x0, int y0, int cell)
+{
+    int px = cell / 8;
+    if (px < 2)
+        px = 2;
+    int ox = x0 + (cell - 8 * px) / 2;
+    int oy = y0 + (cell - 8 * px) / 2;
+    if (ox < x0) ox = x0;
+    if (oy < y0) oy = y0;
+    painter.setPen(Qt::NoPen);
+    for (int y = 0; y < 8; ++y) {
+        for (int x = 0; x < 8; ++x) {
+            char c = pixels[y][x];
+            if (c == '.')
+                continue;
+            painter.fillRect(QRect(ox + x * px, oy + y * px, px, px), spriteColorFor(c));
+        }
+    }
+}
+}
+
 MazeCanvas::MazeCanvas(QWidget* parent)
     : QWidget(parent)
     , maze_(0)
@@ -18,6 +74,9 @@ MazeCanvas::MazeCanvas(QWidget* parent)
     , blockedRow_(-1)
     , blockedCol_(-1)
     , blockedSide_(-1)
+    , mines_(0)
+    , keys_(0)
+    , explosionVertex_(-1)
 {
     setMinimumSize(360, 360);
     setMouseTracking(false);
@@ -75,6 +134,24 @@ void MazeCanvas::setBlockedWall(int row, int col, int side)
     blockedRow_ = row;
     blockedCol_ = col;
     blockedSide_ = side;
+    update();
+}
+
+void MazeCanvas::setMines(const LinkedList<int>* mines)
+{
+    mines_ = mines;
+    update();
+}
+
+void MazeCanvas::setKeys(const LinkedList<int>* keys)
+{
+    keys_ = keys;
+    update();
+}
+
+void MazeCanvas::setExplosion(int vertex)
+{
+    explosionVertex_ = vertex;
     update();
 }
 
@@ -181,6 +258,22 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
+    // 4c) mines (pixel bombs) and keys (pixel keys), on top of cell fills
+    if (mines_ != 0) {
+        LinkedList<int>::Iterator it = mines_->iterator();
+        while (it.hasNext()) {
+            int v = it.next();
+            drawPixelSprite(painter, kBombPix, offX + (v % w) * cell, offY + (v / w) * cell, cell);
+        }
+    }
+    if (keys_ != 0) {
+        LinkedList<int>::Iterator it = keys_->iterator();
+        while (it.hasNext()) {
+            int v = it.next();
+            drawPixelSprite(painter, kKeyPix, offX + (v % w) * cell, offY + (v / w) * cell, cell);
+        }
+    }
+
     // 5) walls
     painter.setPen(QPen(QColor(55, 55, 55), 2));
     for (int r = 0; r < h; ++r) {
@@ -239,5 +332,22 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         painter.drawEllipse(QPoint(offX + c * cell + cell / 2,
                                    offY + r * cell + cell / 2),
                             cell / 3, cell / 3);
+    }
+
+    // 9) mine explosion (orange burst with 8 rays)
+    if (explosionVertex_ >= 0) {
+        int r = explosionVertex_ / w;
+        int c = explosionVertex_ % w;
+        int cx = offX + c * cell + cell / 2;
+        int cy = offY + r * cell + cell / 2;
+        painter.setPen(QPen(QColor(255, 90, 0), 3));
+        painter.setBrush(QColor(255, 170, 0, 190));
+        painter.drawEllipse(QPoint(cx, cy), cell / 2, cell / 2);
+        painter.setBrush(Qt::NoBrush);
+        const int rays[8][2] = { {1,0},{1,1},{0,1},{-1,1},{-1,0},{-1,-1},{0,-1},{1,-1} };
+        for (int i = 0; i < 8; ++i) {
+            painter.drawLine(QPoint(cx + rays[i][0] * cell / 2, cy + rays[i][1] * cell / 2),
+                             QPoint(cx + rays[i][0] * cell * 3 / 5, cy + rays[i][1] * cell * 3 / 5));
+        }
     }
 }

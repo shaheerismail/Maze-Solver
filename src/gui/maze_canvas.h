@@ -23,6 +23,9 @@ public:
     void setPlayer(int vertex);                                     // -1 hides the pawn
     void setTrail(const LinkedList<int>* trail);                    // player breadcrumbs
     void setBlockedWall(int row, int col, int side);                // -1 clears the flash
+    void setMines(const LinkedList<int>* mines);                    // bomb cells
+    void setKeys(const LinkedList<int>* keys);                      // uncollected keys
+    void setExplosion(int vertex);                                  // -1 hides it
     void resetOverlays();
 
 signals:
@@ -49,4 +52,7 @@ private:
     int blockedRow_;                // wall the last move bounced off (red flash)
     int blockedCol_;
     int blockedSide_;
+    const LinkedList<int>* mines_;
+    const LinkedList<int>* keys_;
+    int explosionVertex_;
 };

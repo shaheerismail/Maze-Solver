@@ -86,6 +86,15 @@ private:
     int moves_;                 // successful moves so far
     LinkedList<int> playerTrail_;   // breadcrumb: every cell walked through
 
+    // ---- mines and keys (the game layer) ----
+    // The layout is deterministic per (maze, seed): same maze -> same field.
+    LinkedList<int> mines_;         // bomb cells (visible on the canvas)
+    LinkedList<int> keysPlaced_;    // full key layout, fixed at build time
+    LinkedList<int> keysLeft_;      // keys not yet collected (canvas + gameplay)
+    int keysTotal_;
+    int keysCollected_;
+    bool dead_;                     // just hit a mine: run over until retry
+
     // ---- provenance of the current maze (save file / library key) ----
     unsigned int activeSeed_;
     int activeExtra_;
@@ -94,4 +103,7 @@ private:
     void stopAnimation();
     void announce(const QString& text);
     MazeRecord recordOfCurrentMaze();
+    void placeKeysAndMines(unsigned int seed);   // mines + keys, reachability-checked
+    bool reachableAvoidingMines(int target);     // BFS with mines as blocked cells
+    static int starsFor(int collected, int total);
 };

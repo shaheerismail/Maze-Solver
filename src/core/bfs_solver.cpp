@@ -1,6 +1,7 @@
 #include "bfs_solver.h"
 
-bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList<int>& outRoute)
+bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList<int>& outRoute,
+                      const LinkedList<int>* blockedVertices)
 {
     steps_.clear();
     outRoute.clear();
@@ -40,7 +41,8 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList
         LinkedList<int>::Iterator it = graph.neighbors(v).iterator();
         while (it.hasNext()) {
             int w = it.next();
-            bool discovered = (seen[w] == 0);
+            bool blocked = (blockedVertices != 0 && blockedVertices->contains(w));
+            bool discovered = (seen[w] == 0) && !blocked;
 
             SolveStep check;
             check.kind = SolveStep::EdgeChecked;
