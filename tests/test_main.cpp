@@ -1,8 +1,11 @@
 #include "test_util.h"
 
-// Suites are added here, one per roadmap phase.
+// One function per suite; each is added in its roadmap phase.
+void testMatrix();
+
 int main()
 {
-    printf("%d checks passed, %d failed\n", testPassed(), testFailed());
-    return testFailed() > 0 ? 1 : 0;
+    testBegin("matrix");
+    testMatrix();
+    return testSummary();
 }
