@@ -6,6 +6,7 @@ void testLists();
 void testGenerator();
 void testGraph();
 void testBfs();
+void testExtra();
 
 int main()
 {
@@ -19,5 +20,7 @@ int main()
     testGraph();
     testBegin("bfs");
     testBfs();
+    testBegin("extra");
+    testExtra();
     return testSummary();
 }

@@ -55,10 +55,20 @@ void MazeGenerator::carve(int row, int col)
 
 // Removes up to 'count' interior walls at random grid positions, continuing
 // the SAME random stream as generate() so a (seed, count) pair is reproducible.
+// A closed-interior-wall counter stops the loop early, so a tiny maze (1x1)
+// or an over-requested count simply stops instead of looping forever.
 void MazeGenerator::openExtraPassages(int count)
-
 {
-    while (count > 0) {
+    int available = 0;
+    for (int r = 0; r < maze_.rows(); ++r) {
+        for (int c = 0; c < maze_.cols(); ++c) {
+            if (r > 0 && maze_.hasWall(r, c, MazeMatrix::WALL_N))
+                ++available;
+            if (c > 0 && maze_.hasWall(r, c, MazeMatrix::WALL_W))
+                ++available;
+        }
+    }
+    while (count > 0 && available > 0) {
         int row = rng_.nextInt(0, maze_.rows() - 1);
         int col = rng_.nextInt(0, maze_.cols() - 1);
         int sides[4] = { MazeMatrix::WALL_N, MazeMatrix::WALL_E,
@@ -77,6 +87,7 @@ void MazeGenerator::openExtraPassages(int count)
             step.side = side;
             steps_.pushBack(step);
             maze_.removeWall(row, col, side);
+            --available;
             --count;
         }
         // else: outside wall already open or 1x1 maze -> draw again
