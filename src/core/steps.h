@@ -2,6 +2,8 @@
 // Shared plain structs used by the core and passed to the GUI.
 // No Qt here — these are plain C++ data.
 
+#include <string>
+
 struct GenStep {
     enum Kind { Carve, Extra } kind;
     int row, col, side;   // wall opened at (row,col) towards 'side'

@@ -8,6 +8,7 @@ void testGraph();
 void testBfs();
 void testExtra();
 void testIo();
+void testLibrary();
 
 int main()
 {
@@ -25,5 +26,7 @@ int main()
     testExtra();
     testBegin("io");
     testIo();
+    testBegin("library");
+    testLibrary();
     return testSummary();
 }
