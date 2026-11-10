@@ -8,5 +8,6 @@ add_executable(maze_tests
     test_io.cpp
     test_library.cpp)
 target_link_libraries(maze_tests PRIVATE maze_core)
-# Self-contained exe: runs by double-click without MinGW DLLs on PATH.
-target_link_options(maze_tests PRIVATE -static-libgcc -static-libstdc++)
+# Fully self-contained exe: no MinGW runtime DLLs (libstdc++/libgcc/winpthread)
+# are needed at run time, so double-clicking just works.
+target_link_options(maze_tests PRIVATE -static)
