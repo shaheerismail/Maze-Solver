@@ -19,6 +19,10 @@ MainWindow::MainWindow()
     , visitedCount_(0)
     , routeCount_(0)
     , routeFound_(false)
+    , playMode_(false)
+    , won_(false)
+    , playerVertex_(-1)
+    , moves_(0)
     , activeSeed_(0)
     , activeExtra_(0)
 {
@@ -43,6 +47,7 @@ MainWindow::MainWindow()
 
     generateButton_ = new QPushButton("Generate maze", this);
     solveButton_ = new QPushButton("Solve (BFS)", this);
+    playButton_ = new QPushButton("Play manually (arrows/WASD)", this);
     saveButton_ = new QPushButton("Save to file...", this);
     loadButton_ = new QPushButton("Load from file...", this);
     insertButton_ = new QPushButton("Add this maze to library", this);
@@ -56,6 +61,7 @@ MainWindow::MainWindow()
 
     connect(generateButton_, &QPushButton::clicked, this, &MainWindow::onGenerate);
     connect(solveButton_, &QPushButton::clicked, this, &MainWindow::onSolve);
+    connect(playButton_, &QPushButton::clicked, this, &MainWindow::onPlay);
     connect(saveButton_, &QPushButton::clicked, this, &MainWindow::onSave);
     connect(loadButton_, &QPushButton::clicked, this, &MainWindow::onLoad);
     connect(insertButton_, &QPushButton::clicked, this, &MainWindow::onInsertInLibrary);
@@ -72,6 +78,7 @@ MainWindow::MainWindow()
     side->addLayout(form);
     side->addWidget(generateButton_);
     side->addWidget(solveButton_);
+    side->addWidget(playButton_);
     side->addSpacing(10);
     side->addWidget(saveButton_);
     side->addWidget(loadButton_);
@@ -103,6 +110,14 @@ void MainWindow::stopAnimation()
     routeCount_ = 0;
     visited_.clear();
     route_.clear();
+    playMode_ = false;
+    won_ = false;
+    playerVertex_ = -1;
+    moves_ = 0;
+    playerTrail_.clear();
+    canvas_->setPlayer(-1);
+    canvas_->setTrail(0);
+    canvas_->setBlockedWall(-1, -1, -1);
     canvas_->resetOverlays();
 }
 
@@ -234,6 +249,83 @@ void MainWindow::onSolve()
     announce(routeFound_ ? QString("BFS searching (%1 recorded steps)...")
                          .arg(solveSteps_.size())
                          : QString("BFS searching... (queue may drain: no route)"));
+}
+
+void MainWindow::onPlay()
+{
+    if (graph_.vertexCount() == 0) {
+        announce("Generate or load a maze first.");
+        return;
+    }
+    stopAnimation();
+    canvas_->setMaze(&maze_);      // show the real maze, not the replay copy
+
+    playMode_ = true;
+    won_ = false;
+    moves_ = 0;
+    playerVertex_ = 0;             // the pawn starts at the entrance (top-left)
+    playerTrail_.clear();
+    playerTrail_.pushBack(0);
+    canvas_->setPlayer(0);
+    canvas_->setTrail(&playerTrail_);
+    canvas_->setFocus();           // the canvas takes the keyboard
+
+    announce("Your turn! Click the maze once, then walk with ARROW KEYS or WASD. "
+             "Dark lines are walls: a blocked move flashes red. "
+             "Reach the blue notch at the bottom-right.");
+}
+
+void MainWindow::onMoveRequested(int side)
+{
+    if (!playMode_ || won_)
+        return;                    // keys only move the pawn in play mode
+
+    const int cols = maze_.cols();
+    const int rows = maze_.rows();
+    const int r = playerVertex_ / cols;
+    const int c = playerVertex_ % cols;
+
+    int drow;
+    int dcol;
+    MazeMatrix::sideDelta(side, drow, dcol);
+    const int nr = r + drow;
+    const int nc = c + dcol;
+
+    if (maze_.hasWall(r, c, side) || nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
+        // bumped into a wall (or the outside): flash it red and stay put
+        canvas_->setBlockedWall(r, c, side);
+        QTimer::singleShot(250, this, [this]() { canvas_->setBlockedWall(-1, -1, -1); });
+        announce(QString("Blocked by a wall — find another way. (%1 move(s) so far)")
+                     .arg(moves_));
+        return;
+    }
+
+    playerVertex_ = nr * cols + nc;
+    ++moves_;
+    playerTrail_.pushBack(playerVertex_);
+    if (playerTrail_.size() > 5000) { // wandering forever? keep it bounded
+        int dropped;                  // (oldest breadcrumb quietly drops)
+        playerTrail_.popFront(dropped);
+    }
+    canvas_->setPlayer(playerVertex_);
+    canvas_->setTrail(&playerTrail_);
+    canvas_->setBlockedWall(-1, -1, -1);
+
+    const int exitVertex = rows * cols - 1;
+    if (playerVertex_ == exitVertex) {
+        won_ = true;
+        // payoff: overlay the BFS optimal route for comparison
+        route_.clear();
+        solver_.solve(graph_, 0, exitVertex, route_);
+        canvas_->setRoute(&route_, route_.size());
+        announce(QString("You reached the exit in %1 move(s)! "
+                         "The BFS shortest route is %2 cells (red). "
+                         "Press Play again to retry.")
+                     .arg(moves_).arg(route_.size()));
+    } else {
+        announce(QString("Cell (%1, %2) — %3 move(s). Keep going!")
+                     .arg(nr).arg(nc).arg(moves_));
+    }
 }
 
 void MainWindow::onSave()

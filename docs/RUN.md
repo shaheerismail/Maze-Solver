@@ -24,6 +24,15 @@ copy D:\qt-installed\Tools\mingw1310_64\bin\libgcc_s_seh-1.dll,libstdc++-6.dll,l
 5. Save/Load uses the text format `MAZE_V1`. Add to library stores the maze in the BST keyed by seed;
    set the lookup seed and press "Look up by seed" to restore it.
 
+### Play manually (the game part)
+
+1. **Generate maze** (or load one), then click **Play manually (arrows/WASD)**.
+2. Click the maze area once, then walk the pawn with **arrow keys** or **WASD**.
+   Dark lines are walls: trying to walk through one flashes the wall red and you stay put.
+3. Blue breadcrumbs mark every cell you have walked through.
+4. Reach the **blue notch at the bottom-right** to win: the BFS shortest route is drawn in red
+   and the status bar compares your move count with the optimum.
+
 ## Console tests (226 checks)
 
 ```

@@ -1,4 +1,5 @@
 #include "maze_canvas.h"
+#include <QKeyEvent>
 #include <QPainter>
 
 MazeCanvas::MazeCanvas(QWidget* parent)
@@ -12,9 +13,15 @@ MazeCanvas::MazeCanvas(QWidget* parent)
     , edgeTo_(-1)
     , route_(0)
     , routeCount_(0)
+    , playerVertex_(-1)
+    , trail_(0)
+    , blockedRow_(-1)
+    , blockedCol_(-1)
+    , blockedSide_(-1)
 {
     setMinimumSize(360, 360);
     setMouseTracking(false);
+    setFocusPolicy(Qt::StrongFocus);   // must be focusable to receive key presses
 }
 
 void MazeCanvas::setMaze(const MazeMatrix* maze)
@@ -49,6 +56,43 @@ void MazeCanvas::setRoute(const LinkedList<int>* route, int count)
     route_ = route;
     routeCount_ = count;
     update();
+}
+
+void MazeCanvas::setPlayer(int vertex)
+{
+    playerVertex_ = vertex;
+    update();
+}
+
+void MazeCanvas::setTrail(const LinkedList<int>* trail)
+{
+    trail_ = trail;
+    update();
+}
+
+void MazeCanvas::setBlockedWall(int row, int col, int side)
+{
+    blockedRow_ = row;
+    blockedCol_ = col;
+    blockedSide_ = side;
+    update();
+}
+
+void MazeCanvas::keyPressEvent(QKeyEvent* event)
+{
+    int side = 0;
+    switch (event->key()) {
+        case Qt::Key_Up:    case Qt::Key_W: side = MazeMatrix::WALL_N; break;
+        case Qt::Key_Right: case Qt::Key_D: side = MazeMatrix::WALL_E; break;
+        case Qt::Key_Down:  case Qt::Key_S: side = MazeMatrix::WALL_S; break;
+        case Qt::Key_Left:  case Qt::Key_A: side = MazeMatrix::WALL_W; break;
+        default:
+            QWidget::keyPressEvent(event);
+            return;
+    }
+    if (playerVertex_ >= 0)
+        emit moveRequested(side);
+    event->accept();
 }
 
 void MazeCanvas::resetOverlays()
@@ -124,6 +168,19 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
+    // 4b) player breadcrumbs: every cell the pawn has walked through
+    if (trail_ != 0) {
+        painter.setPen(Qt::NoPen);
+        LinkedList<int>::Iterator it = trail_->iterator();
+        while (it.hasNext()) {
+            int v = it.next();
+            int r = v / w;
+            int c = v % w;
+            painter.fillRect(QRect(offX + c * cell + cell / 3, offY + r * cell + cell / 3,
+                                   cell / 3, cell / 3), QColor(120, 180, 250, 120));
+        }
+    }
+
     // 5) walls
     painter.setPen(QPen(QColor(55, 55, 55), 2));
     for (int r = 0; r < h; ++r) {
@@ -141,6 +198,23 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
+    // 5b) the wall the last blocked move bounced off (red flash, ~250 ms)
+    if (blockedSide_ > 0 && blockedRow_ >= 0) {
+        int x0 = offX + blockedCol_ * cell;
+        int y0 = offY + blockedRow_ * cell;
+        painter.setPen(QPen(QColor(225, 40, 40), 4));
+        switch (blockedSide_) {
+            case MazeMatrix::WALL_N:
+                painter.drawLine(QPoint(x0, y0), QPoint(x0 + cell, y0)); break;
+            case MazeMatrix::WALL_E:
+                painter.drawLine(QPoint(x0 + cell, y0), QPoint(x0 + cell, y0 + cell)); break;
+            case MazeMatrix::WALL_S:
+                painter.drawLine(QPoint(x0, y0 + cell), QPoint(x0 + cell, y0 + cell)); break;
+            case MazeMatrix::WALL_W:
+                painter.drawLine(QPoint(x0, y0), QPoint(x0, y0 + cell)); break;
+        }
+    }
+
     // 6) entrance / exit markers on the outside openings
     painter.setPen(Qt::NoPen);
     painter.fillRect(QRect(offX + cell / 3, offY - 3, cell / 3, 7), QColor(70, 180, 70));
@@ -153,6 +227,17 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         painter.setBrush(Qt::NoBrush);
         painter.drawEllipse(QPoint(offX + cursorCol_ * cell + cell / 2,
                                    offY + cursorRow_ * cell + cell / 2),
+                            cell / 3, cell / 3);
+    }
+
+    // 8) the player's pawn (play mode)
+    if (playerVertex_ >= 0) {
+        int r = playerVertex_ / w;
+        int c = playerVertex_ % w;
+        painter.setPen(QPen(QColor(150, 60, 0), 2));
+        painter.setBrush(QColor(255, 130, 10));
+        painter.drawEllipse(QPoint(offX + c * cell + cell / 2,
+                                   offY + r * cell + cell / 2),
                             cell / 3, cell / 3);
     }
 }

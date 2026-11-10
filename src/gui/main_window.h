@@ -32,6 +32,8 @@ public:
 private slots:
     void onGenerate();
     void onSolve();
+    void onPlay();               // manual walk mode (arrow keys / WASD)
+    void onMoveRequested(int side);
     void onSave();
     void onLoad();
     void onInsertInLibrary();
@@ -55,6 +57,7 @@ private:
     QSpinBox* librarySeed_;
     QPushButton* generateButton_;
     QPushButton* solveButton_;
+    QPushButton* playButton_;
     QPushButton* saveButton_;
     QPushButton* loadButton_;
     QPushButton* insertButton_;
@@ -75,6 +78,13 @@ private:
     int visitedCount_;
     int routeCount_;
     bool routeFound_;
+
+    // ---- manual play mode (walk the maze with the keyboard) ----
+    bool playMode_;             // true between pressing Play and winning/leaving
+    bool won_;                  // exit reached; keys ignored afterwards
+    int playerVertex_;          // pawn's current cell id (-1 = not playing)
+    int moves_;                 // successful moves so far
+    LinkedList<int> playerTrail_;   // breadcrumb: every cell walked through
 
     // ---- provenance of the current maze (save file / library key) ----
     unsigned int activeSeed_;
