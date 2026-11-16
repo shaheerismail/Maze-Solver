@@ -6,7 +6,7 @@
 
 #include <QWidget>
 #include "maze_matrix.h"
-#include "linked_list.h"
+#include "int_linked_list.h"
 
 class QPaintEvent;
 
@@ -17,14 +17,14 @@ public:
 
     void setMaze(const MazeMatrix* maze);
     void setGenerationCursor(int row, int col);                     // -1 hides it
-    void setVisited(const LinkedList<int>* vertices, int count);    // dequeued so far
+    void setVisited(const IntLinkedList* vertices, int count);      // dequeued so far
     void setCurrentEdge(int fromVertex, int toVertex);              // -1,-1 hides it
-    void setRoute(const LinkedList<int>* route, int count);         // route tail so far
+    void setRoute(const IntLinkedList* route, int count);           // route tail so far
     void setPlayer(int vertex);                                     // -1 hides the pawn
-    void setTrail(const LinkedList<int>* trail);                    // player breadcrumbs
+    void setTrail(const IntLinkedList* trail);                      // player breadcrumbs
     void setBlockedWall(int row, int col, int side);                // -1 clears the flash
-    void setMines(const LinkedList<int>* mines);                    // bomb cells
-    void setKeys(const LinkedList<int>* keys);                      // uncollected keys
+    void setMines(const IntLinkedList* mines);                      // bomb cells
+    void setKeys(const IntLinkedList* keys);                        // uncollected keys
     void setExplosion(int vertex);                                  // -1 hides it
     void resetOverlays();
 
@@ -39,20 +39,20 @@ private:
     const MazeMatrix* maze_;
     int cursorRow_;
     int cursorCol_;
-    const LinkedList<int>* visited_;
+    const IntLinkedList* visited_;  // BFS dequeued cells so far (view only)
     int visitedCount_;
     int edgeFrom_;
     int edgeTo_;
-    const LinkedList<int>* route_;
+    const IntLinkedList* route_;    // BFS route tail drawn so far (view only)
     int routeCount_;
 
     // manual play mode (walking the maze with the keyboard)
     int playerVertex_;              // current cell id, -1 = not playing
-    const LinkedList<int>* trail_;  // breadcrumbs list owned by MainWindow
+    const IntLinkedList* trail_;    // breadcrumb list owned by MainWindow
     int blockedRow_;                // wall the last move bounced off (red flash)
     int blockedCol_;
     int blockedSide_;
-    const LinkedList<int>* mines_;
-    const LinkedList<int>* keys_;
+    const IntLinkedList* mines_;    // bomb cells (view only)
+    const IntLinkedList* keys_;     // uncollected keys (view only)
     int explosionVertex_;
 };

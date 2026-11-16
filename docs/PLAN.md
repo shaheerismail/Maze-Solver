@@ -49,13 +49,14 @@ Communication pattern: **record-and-replay**. Long operations (generation = ~V�
               v                                                    v
 +--------------------------- maze_core (core/) — Qt-free ----------------------+
 |  MazeMatrix  Cell[walls:4bit][visited]   + toAscii() / toWallString() etc.   |
-|  MazeGenerator  recursive backtracker -> LinkedList<GenStep> steps          |
+|  MazeGenerator  recursive backtracker -> CarveStepList steps                |
 |                 + openEntranceExit() + openRandomPassages(count)            |
-|  MazeGraph    adjacency lists: LinkedList<int>*                            |
-|  BfsSolver    LinkedQueue + parent[] -> LinkedList<int> route + SolveSteps  |
+|  MazeGraph    adjacency lists: IntLinkedList*                              |
+|  BfsSolver    IntLinkedQueue + parent[] -> IntLinkedList route + SolveStepList |
 |  MazeLibrary  MazeRecord BST keyed by seed                                 |
 |  MazeIO       text save/load + validation (hand-written parser)            |
-|  primitives: LinkedQueue<T>, LinkedList<T>, RandomLCG  (templates/header-only)|
+|  primitives: IntLinkedList, IntLinkedQueue, RandomLCG  (standalone DSA,     |
+|              each with its own .h/.cpp — no template classes)               |
 +-------------------------------------------------------------------------------+
         | std::fstream                                    | hex wall string
         v                                                 v
@@ -75,12 +76,16 @@ Maze-Solver/
 ├─ docs/
 │  └─ PLAN.md                     # this plan
 ├─ src/
-│  ├─ core/                       # Qt-free; all headers except templates have .cpp
+│  ├─ core/                       # Qt-free; every class has its own .h/.cpp
 │  │  ├─ maze_matrix.h / .cpp     # Cell, MazeMatrix
 │  │  ├─ rng.h / .cpp             # RandomLCG
-│  │  ├─ linked_list.h            # LinkedList<T> (template → header-only)
-│  │  ├─ queue.h                  # LinkedQueue<T> (template → header-only)
-│  │  ├─ steps.h                  # struct GenStep, struct SolveStep
+│  │  ├─ int_linked_list.h / .cpp # IntLinkedList (standalone, no templates)
+│  │  ├─ int_linked_queue.h / .cpp# IntLinkedQueue (standalone, no templates)
+│  │  ├─ steps.h                  # struct CarveStep, struct SolveStep
+│  │  ├─ carve_step_list.h / .cpp # CarveStepList (standalone, no templates)
+│  │  ├─ solve_step_list.h / .cpp # SolveStepList (standalone, no templates)
+│  │  ├─ maze_record_list.h / .cpp# MazeRecordList (standalone, no templates)
+│  │  ├─ string_list.h / .cpp     # StringList (standalone, no templates)
 │  │  ├─ maze_generator.h / .cpp
 │  │  ├─ maze_graph.h / .cpp
 │  │  ├─ bfs_solver.h / .cpp
@@ -174,7 +179,7 @@ Wall encoding shared by everyone: bits `N=1, E=2, S=4, W=8`; bit set = wall pres
 ### `steps.h` (plain structs, no Qt)
 
 ```cpp
-struct GenStep  { enum Kind { Carve, Extra } kind; int row, col, side; };   // wall opened at (row,col)
+struct CarveStep { enum Kind { Carve, ExtraOpening } kind; int row, col, side; };   // wall opened at (row,col)
 struct SolveStep {
     enum Kind { Dequeued, EdgeChecked, Found } kind;
     int vertex;        // dequeued vertex, or vertex whose edge is checked
@@ -246,63 +251,65 @@ private:
 
 A `.cpp` file keeps the LCG recurrence in exactly one translation unit (easy to point to in a viva).
 
-### `linked_list.h` / `queue.h` (templates, header-only reason: templates must be visible to clients)
+### `int_linked_list.h` / `int_linked_queue.h` (standalone DSA classes, each with its own .cpp — no templates per course rules)
 
 ```cpp
-template <typename T>
-class LinkedList {
+class IntLinkedList {                     // singly linked list of int cell ids
 public:
-    LinkedList();
-    LinkedList(const LinkedList& other);             // deep copy
-    LinkedList& operator=(const LinkedList& other);  // deep copy
-    ~LinkedList();
+    IntLinkedList();
+    IntLinkedList(const IntLinkedList& other);             // deep copy
+    IntLinkedList& operator=(const IntLinkedList& other);  // deep copy
+    ~IntLinkedList();
 
-    void pushBack(const T& value);    // O(1) via tail_
-    void pushFront(const T& value);   // O(1) — used by BFS route reconstruction
-    bool popFront(T& out);            // false when empty
+    void pushBack(int value);         // O(1) via tail_
+    void pushFront(int value);        // O(1) — used by BFS route reconstruction
+    bool popFront(int& outValue);     // false when empty
+    bool contains(int value) const;   // linear scan (mine/key membership)
+    bool removeValue(int value);      // unlink the FIRST matching node
     bool isEmpty() const;
     int size() const;
     void clear();                     // deletes all nodes
 
-    class Iterator {
+    class Cursor {                    // read-only forward walk (GUI drawing)
     public:
         bool hasNext() const;
-        const T& next();              // returns current element, then advances
+        int next();                   // returns current value, then advances
     private:
-        friend class LinkedList<T>;
-        explicit Iterator(typename LinkedList<T>::Node* node);
-        typename LinkedList<T>::Node* node_;
+        friend class IntLinkedList;
+        explicit Cursor(const Node* node);
+        const Node* node_;
     };
-    Iterator iterator() const;        // iterate a const list (GUI drawing, BST in-order dump)
+    Cursor cursor() const;
 
 private:
-    struct Node { T value; Node* next; };
+    struct Node { int value; Node* next; };
     Node* head_;
     Node* tail_;
     int size_;
 };
 
-template <typename T>
-class LinkedQueue {
+class IntLinkedQueue {                    // FIFO queue of ints (BFS frontier)
 public:
-    LinkedQueue();
-    LinkedQueue(const LinkedQueue& other);             // deep copy
-    LinkedQueue& operator=(const LinkedQueue& other);  // deep copy
-    ~LinkedQueue();
-    void enqueue(const T& value);                      // O(1)
-    bool dequeue(T& out);                              // O(1); false when empty
+    IntLinkedQueue();
+    IntLinkedQueue(const IntLinkedQueue& other);             // deep copy
+    IntLinkedQueue& operator=(const IntLinkedQueue& other);  // deep copy
+    ~IntLinkedQueue();
+    void enqueue(int value);                            // O(1)
+    bool dequeue(int& outValue);                        // O(1); false when empty
     bool isEmpty() const;
     int size() const;
     void clear();
 private:
-    struct QNode { T value; QNode* next; };
-    QNode* head_;   // pop here
-    QNode* tail_;   // push here
+    struct Node { int value; Node* next; };
+    Node* head_;   // dequeue here
+    Node* tail_;   // enqueue here
     int size_;
 };
 ```
 
-**Ownership:** each container owns its nodes; nodes are never shared or exposed. `clear()` and destructor delete in order. Templates live in headers (`linked_list.h`, `queue.h`) because the compiler needs the definitions.
+The step/record lists follow the same standalone pattern, one class per element type, each in its own .h/.cpp pair: `CarveStepList` (nodes hold `CarveStep`), `SolveStepList` (nodes hold `SolveStep`), `MazeRecordList` (nodes hold `MazeRecord`), and `StringList` (nodes hold `std::string`, used by the save-file line splitter). No class in the project is a template.
+
+**Ownership:** each container owns its nodes; nodes are never shared or exposed. `clear()` and destructor delete in order. Implementations live in .cpp files because these are ordinary classes — no header-only templates remain.
 
 ### `maze_generator.h`
 
@@ -311,13 +318,13 @@ class MazeGenerator {
 public:
     MazeGenerator(MazeMatrix& maze, unsigned int seed);  // holds maze by reference (caller-owned)
     void generate();                       // clearVisited, carve(0,0), open entrance/exit
-    void openExtraPassages(int count);     // 'Extra' GenSteps; uses the SAME rng stream as generate()
+    void openExtraPassages(int count);     // 'ExtraOpening' CarveSteps; uses the SAME rng stream as generate()
                                            // and never re-opens an already-open interior wall
-    const LinkedList<GenStep>& steps() const;
+    const CarveStepList& steps() const;
 private:
     MazeMatrix& maze_;
     RandomLCG rng_;
-    LinkedList<GenStep> steps_;
+    CarveStepList steps_;
     void carve(int row, int col);          // recursive backtracking body
 };
 ```
@@ -338,13 +345,13 @@ public:
     int vertexCount() const;
     int rowOf(int vertex) const;                       // vertex == row * cols + col
     int colOf(int vertex) const;
-    const LinkedList<int>& neighbors(int vertex) const; // returns that vertex's adjacency list
+    const IntLinkedList& neighbors(int vertex) const; // returns that vertex's adjacency list
 
 private:
     int rows_;
     int cols_;
     int count_;
-    LinkedList<int>* adjacency_;   // new LinkedList<int>[count_]; destructor uses delete[]
+    IntLinkedList* adjacency_;   // new IntLinkedList[count_]; destructor uses delete[]
 };
 ```
 
@@ -358,11 +365,12 @@ public:
     BfsSolver();
     // Returns true iff a route exists; on success outRoute holds vertex ids entrance -> exit.
     // steps() afterwards holds the full Dequeued/EdgeChecked/Found trace for animation.
-    bool solve(const MazeGraph& graph, int source, int target, LinkedList<int>& outRoute);
-    const LinkedList<SolveStep>& steps() const;
+    bool solve(const MazeGraph& graph, int source, int target, IntLinkedList& outRoute,
+               const IntLinkedList* blockedVertices = 0);
+    const SolveStepList& steps() const;
 
 private:
-    LinkedList<SolveStep> steps_;
+    SolveStepList steps_;
     // per-call scratch, allocated/freed inside solve():
     //   unsigned char* seen_    -> new unsigned char[graph.vertexCount()]
     //   int* parent_            -> new int[graph.vertexCount()], parent[source] = -1
@@ -385,7 +393,7 @@ public:
     bool findBySeed(unsigned int seed, MazeRecord& out) const;
     bool removeBySeed(unsigned int seed);                     // classic 3-case BST delete (successor for 2 children)
     int size() const;
-    void inOrder(LinkedList<MazeRecord>& out) const;          // ascending by seed — GUI "browse library"
+    void inOrder(MazeRecordList& out) const;          // ascending by seed — GUI "browse library"
 
 private:
     struct Node { MazeRecord record; Node* left; Node* right; };
@@ -395,7 +403,7 @@ private:
     Node* find(Node* node, unsigned int seed) const;          // recursive
     Node* remove(Node* node, unsigned int seed, bool& removed);
     Node* minValueNode(Node* node) const;                     // in-order successor helper
-    void inOrder(Node* node, LinkedList<MazeRecord>& out) const;
+    void inOrder(Node* node, MazeRecordList& out) const;
     void destroy(Node* node);                                 // post-order recursive free
 };
 ```
@@ -437,8 +445,8 @@ Pure `std::string`/`fstream` parsing with hand-written helpers — see §6 for t
 class MazeCanvas : public QWidget {
     Q_OBJECT
 public:
-    void setMaze(const MazeMatrix* maze, const LinkedList<int>* bfsVisited, int visitedCount,
-                 const LinkedList<int>* route, int routeCount, int cursorRow, int cursorCol);
+    void setMaze(const MazeMatrix* maze, const IntLinkedList* bfsVisited, int visitedCount,
+                 const IntLinkedList* route, int routeCount, int cursorRow, int cursorCol);
     // pointer set is NON-owning (MainWindow owns all core objects as members);
     // cursorRow==-1 hides the generation cursor; counts control how much is highlighted
 protected:
@@ -468,9 +476,9 @@ private:
 
     // ---- replay state ----
     QTimer timer_;
-    LinkedList<GenStep> genSteps_;
-    LinkedList<SolveStep> solveSteps_;
-    LinkedList<int> route_;
+    CarveStepList genSteps_;
+    SolveStepList solveSteps_;
+    IntLinkedList route_;
     int playhead_; int phase_;         // 0 = idle, 1 = generating, 2 = searching, 3 = drawing route
 };
 ```
@@ -479,21 +487,21 @@ private:
 
 ## 4. Algorithm notes (with viva one-liners)
 
-**Recursive backtracking (generation).** Start at cell (0,0), mark visited, shuffle the four directions with `RandomLCG` (Fisher–Yates over a 4-element direction array), for each unvisited in-bounds neighbour: remove the wall between current and neighbour (clears both nibble sides), record a `GenStep{Carve,...}`, recurse into the neighbour. When no unvisited neighbour remains, return — the call stack itself is the "step back". Then `openEntranceExit()` (north of (0,0), south of (rows−1,cols−1)). Result is a perfect maze: every cell reachable, exactly one path between any two cells. Depth ≤ 50×50 = 2500 ⇒ safe on a 1 MB stack at the enforced cap.
+**Recursive backtracking (generation).** Start at cell (0,0), mark visited, shuffle the four directions with `RandomLCG` (Fisher–Yates over a 4-element direction array), for each unvisited in-bounds neighbour: remove the wall between current and neighbour (clears both nibble sides), record a `CarveStep{Carve,...}`, recurse into the neighbour. When no unvisited neighbour remains, return — the call stack itself is the "step back". Then `openEntranceExit()` (north of (0,0), south of (rows−1,cols−1)). Result is a perfect maze: every cell reachable, exactly one path between any two cells. Depth ≤ 50×50 = 2500 ⇒ safe on a 1 MB stack at the enforced cap.
 *Viva line:* "Depth-first carving — visit a random unvisited neighbour, knock down the wall between us, recurse; the call stack backtracks for me."
 
-**Matrix → graph.** Vertex id = `row * cols + col` for *every* cell (all cells are rooms). Edge between adjacent cells iff the shared wall bit is cleared. Build: `adjacency_ = new LinkedList<int>[rows_*cols_]`, one pass checking only each cell's E and S neighbours so each interior passage is added to both adjacency lists exactly once. The entrance/exit outside openings produce no edges because outside bounds are never vertices.
+**Matrix → graph.** Vertex id = `row * cols + col` for *every* cell (all cells are rooms). Edge between adjacent cells iff the shared wall bit is cleared. Build: `adjacency_ = new IntLinkedList[rows_*cols_]`, one pass checking only each cell's E and S neighbours so each interior passage is added to both adjacency lists exactly once. The entrance/exit outside openings produce no edges because outside bounds are never vertices.
 *Viva line:* "One vertex per cell; scan walls once, and every open passage becomes an edge in two adjacency lists."
 
-**BFS with parent links.** `new` two scratch arrays of size V: `seen[V]` (0/1) and `parent[V]` (`parent[source] = -1`). Seed a `LinkedQueue<int>` with the source; loop: dequeue `v`, record `SolveStep{Dequeued, v}`; if `v == target` → success, stop. Otherwise for each neighbour `w` in `neighbors(v)`: record `SolveStep{EdgeChecked, v, w, discovered}`; if `!seen[w]` → `seen[w]=1`, `parent[w]=v`, enqueue. If the queue drains without reaching the target → **no route**: return `false`, leave `outRoute` empty (GUI prints a status message; tests assert `false` + empty route).
+**BFS with parent links.** `new` two scratch arrays of size V: `seen[V]` (0/1) and `parent[V]` (`parent[source] = -1`). Seed an `IntLinkedQueue` with the source; loop: dequeue `v`, record `SolveStep{Dequeued, v}`; if `v == target` → success, stop. Otherwise for each neighbour `w` in `neighbors(v)`: record `SolveStep{EdgeChecked, v, w, discovered}`; if `!seen[w]` → `seen[w]=1`, `parent[w]=v`, enqueue. If the queue drains without reaching the target → **no route**: return `false`, leave `outRoute` empty (GUI prints a status message; tests assert `false` + empty route).
 *Viva line:* "FIFO order means the first time a cell is reached, it's via a shortest route; `parent[]` remembers who discovered each cell."
 
 **Route reconstruction.** Walk `parent` from `target` back to `source`, `pushFront` each vertex id into `outRoute` — O(1) inserts give the list in entrance→exit order directly, no separate reversal pass. (Alternative: pushBack then reverse; rejected because `pushFront` avoids it.)
 *Viva line:* "Walk the discovery chain backwards and pushFront each step."
 
-**Extra openings.** After `generate()`: pick a random cell + random side via the continuing RNG stream; if that side's wall exists *and* the neighbour is in bounds, `removeWall` it and record `GenStep{Extra, ...}`; repeat `count` times. Adds at most `count` new interior edges so BFS then has several candidate routes and is actually required to pick the shortest one. Deterministic for the same (seed, count) pair.
+**Extra openings.** After `generate()`: pick a random cell + random side via the continuing RNG stream; if that side's wall exists *and* the neighbour is in bounds, `removeWall` it and record `CarveStep{ExtraOpening, ...}`; repeat `count` times. Adds at most `count` new interior edges so BFS then has several candidate routes and is actually required to pick the shortest one. Deterministic for the same (seed, count) pair.
 
-**BST insert/search/delete by seed.** Standard recursion on `Node*`. Search: compare, descend left (<) or right (>) until `nullptr` or match — O(h). Insert: descend to a `nullptr` and attach; if the seed matches an existing node, copy over the record (replace policy). Delete: leaf → free; one child → splice; two children → copy the in-order successor's record into the node, then `remove` the successor from the right subtree. `inOrder` appends records into `LinkedList<MazeRecord>` (sorted by seed) so the GUI can list the library.
+**BST insert/search/delete by seed.** Standard recursion on `Node*`. Search: compare, descend left (<) or right (>) until `nullptr` or match — O(h). Insert: descend to a `nullptr` and attach; if the seed matches an existing node, copy over the record (replace policy). Delete: leaf → free; one child → splice; two children → copy the in-order successor's record into the node, then `remove` the successor from the right subtree. `inOrder` appends records into `MazeRecordList` (sorted by seed) so the GUI can list the library.
 *Viva line:* "Sorted insertion gives O(log n) search by seed; duplicate key = update in place."
 
 ---
@@ -502,7 +510,7 @@ private:
 
 Core never blocks and never talks to Qt. Each long operation runs eagerly in the button handler (worst case 50×50: generation ~2500 carves, BFS ~2500 dequeues + ≤10k edge checks — sub-millisecond work) and records steps. The GUI then re-plays the recording:
 
-**Generation replay.** `Generate` button → build `MazeGenerator`, `generate()`, optional `openExtraPassages()` → keep `genSteps_`. Also create `animMatrix_` = a fresh *all-walls* matrix of the same size (final `maze_` is untouched during animation). `QTimer` at 20 ms: each tick applies the next `GenStep` (or a run of them — see below) into `animMatrix_` via `removeWall`, moves the paint cursor to that cell, `canvas->update()`. When the playhead reaches the end: copy the real `maze_` into `animMatrix_` (one assignment), stop the timer, build the graph, enable `Solve`. The canvas needs **no knowledge of generation** — it just paints a matrix, and the matrix visibly grows.
+**Generation replay.** `Generate` button → build `MazeGenerator`, `generate()`, optional `openExtraPassages()` → keep `genSteps_`. Also create `animMatrix_` = a fresh *all-walls* matrix of the same size (final `maze_` is untouched during animation). `QTimer` at 20 ms: each tick applies the next `CarveStep` (or a run of them — see below) into `animMatrix_` via `removeWall`, moves the paint cursor to that cell, `canvas->update()`. When the playhead reaches the end: copy the real `maze_` into `animMatrix_` (one assignment), stop the timer, build the graph, enable `Solve`. The canvas needs **no knowledge of generation** — it just paints a matrix, and the matrix visibly grows.
 
 **BFS replay, two phases on the same timer.**
 *Phase 1 — search:* tick = next `SolveStep`; the canvas highlights `visitedCount` cells (all vertices dequeued so far, previously discovered in BFS order) in green and the last edge checked in yellow. The GUI holds a cursor over `solveSteps_` and simply advances an int; the canvas walks the list from the head up to that count (O(n) per paint, n ≤ 2500 → at most ~6 M pointer hops over the whole animation — negligible).
@@ -554,7 +562,7 @@ No-API audit rule applies from the first commit: before every code commit, grep 
 |---|---|---|---|---|
 | **0** | Scaffold: CMake targets all build empty, kit configured | `CMakeLists.txt`, `CMakePresets.json`, `.gitignore`, empty stubs | `cmake --preset windows-qt && cmake --build build` succeeds; `maze_tests` runs, prints "0 tests"; `maze_gui` opens an empty window | — (build check, manual) |
 | **1** | Matrix + ASCII print | `maze_matrix.h/.cpp`, `test_matrix.cpp` | Construct/copy/wall ops work; `reset()` validates 1..50 and returns false (leaving state untouched) for invalid; `toAscii()` matches a hand-written 3×3 golden | T01–T05 |
-| **2** | `LinkedList` + `LinkedQueue` | `linked_list.h`, `queue.h`, `test_lists.cpp` | pushBack/pushFront/popFront/clear correct, deep copies independent, queue FIFO order proven, drains safely | T06–T09 |
+| **2** | `IntLinkedList` + `IntLinkedQueue` | `int_linked_list.h/.cpp`, `int_linked_queue.h/.cpp`, `test_lists.cpp` | pushBack/pushFront/popFront/clear correct, deep copies independent, queue FIFO order proven, drains safely | T06–T09 |
 | **3** | Generation with seed (+ entrance/exit) | `rng.h/.cpp`, `maze_generator.h/.cpp`, `steps.h`, `test_generator.cpp` | Same seed ⇒ identical maze twice; different seed ⇒ (almost surely) different; every cell visited; interior open-edge count = rows*cols−1 (perfect maze); entrance+exit outside walls open; works for 1×1, 1×N, N×1, 50×50 | T10–T15 |
 | **4** | Graph | `maze_graph.h/.cpp`, `test_graph_bfs.cpp` | Vertex count = rows*cols; adjacency symmetric; sum of degrees = 2·(interior edges); rebuild from a changed matrix is correct | T16–T18 |
 | **5** | BFS + route | `bfs_solver.h/.cpp`, `test_graph_bfs.cpp` | Route on a hand-built tiny maze matches the known shortest; route verified end-to-end (adjacent/open-wall/no repeats/correct endpoints); queue-drain no-route case returns `false` with empty route; work bounded structurally (trace length ≤ 4·V) | T19–T23 |
@@ -679,4 +687,4 @@ CMakeLists.txt.user
 
 1. **Copy this plan into the project + Phase 0 — scaffold the build.** Write this file unmodified to `Maze-Solver/docs/PLAN.md` (Plan mode cannot); commit it as `docs: add docs/PLAN.md implementation plan`. Then create the root `CMakeLists.txt` + `CMakePresets.json` + `.gitignore` and empty target folders exactly per §2; get `maze_tests` and a bare `maze_gui` window to configure and build with the installed Qt 6 kit in VS Code. Commit `build: scaffold ...`. This is every Windows/Qt risk dying at once.
 2. **Phase 1 — `MazeMatrix`.** Implement `src/core/maze_matrix.h/.cpp` (Cell bitmask, rule-of-three with copy-and-swap, `isValidSize` + `reset()` returning false for invalid sizes, `removeWall` symmetry, `toAscii`, `toWallString`/`fromWallString`) plus `tests/test_matrix.cpp` with T01–T05. Green suite → commit.
-3. **Phase 2 — `LinkedList<T>` and `LinkedQueue<T>`.** Header-only templates in `src/core/linked_list.h` and `src/core/queue.h` per §3 (rule-of-three, `tail_` for O(1) pushBack, safe `popFront`/`dequeue`) with `tests/test_lists.cpp` covering T06–T09. Green suite → commit. This unblocks phase 3's step recording.
+3. **Phase 2 — `IntLinkedList` and `IntLinkedQueue`.** Standalone DSA classes in `src/core/int_linked_list.h/.cpp` and `src/core/int_linked_queue.h/.cpp` per §3 (rule-of-three, `tail_` for O(1) pushBack, safe `popFront`/`dequeue`, no template classes per course rules) with `tests/test_lists.cpp` covering T06–T09. Green suite → commit. This unblocks phase 3's step recording.

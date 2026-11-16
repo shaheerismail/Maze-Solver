@@ -96,7 +96,7 @@ void MazeCanvas::setGenerationCursor(int row, int col)
     update();
 }
 
-void MazeCanvas::setVisited(const LinkedList<int>* vertices, int count)
+void MazeCanvas::setVisited(const IntLinkedList* vertices, int count)
 {
     visited_ = vertices;
     visitedCount_ = count;
@@ -110,7 +110,7 @@ void MazeCanvas::setCurrentEdge(int fromVertex, int toVertex)
     update();
 }
 
-void MazeCanvas::setRoute(const LinkedList<int>* route, int count)
+void MazeCanvas::setRoute(const IntLinkedList* route, int count)
 {
     route_ = route;
     routeCount_ = count;
@@ -123,7 +123,7 @@ void MazeCanvas::setPlayer(int vertex)
     update();
 }
 
-void MazeCanvas::setTrail(const LinkedList<int>* trail)
+void MazeCanvas::setTrail(const IntLinkedList* trail)
 {
     trail_ = trail;
     update();
@@ -137,13 +137,13 @@ void MazeCanvas::setBlockedWall(int row, int col, int side)
     update();
 }
 
-void MazeCanvas::setMines(const LinkedList<int>* mines)
+void MazeCanvas::setMines(const IntLinkedList* mines)
 {
     mines_ = mines;
     update();
 }
 
-void MazeCanvas::setKeys(const LinkedList<int>* keys)
+void MazeCanvas::setKeys(const IntLinkedList* keys)
 {
     keys_ = keys;
     update();
@@ -208,7 +208,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
     // 2) BFS visited cells (green) — the frontier Microsoft-style trace
     if (visited_ != 0) {
         painter.setPen(Qt::NoPen);
-        LinkedList<int>::Iterator it = visited_->iterator();
+        IntLinkedList::Cursor it = visited_->cursor();
         for (int i = 0; i < visitedCount_ && it.hasNext(); ++i) {
             int v = it.next();
             int r = v / w;
@@ -235,7 +235,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
     // 4) route so far (red) — entrance -> exit
     if (route_ != 0) {
         painter.setPen(Qt::NoPen);
-        LinkedList<int>::Iterator it = route_->iterator();
+        IntLinkedList::Cursor it = route_->cursor();
         for (int i = 0; i < routeCount_ && it.hasNext(); ++i) {
             int v = it.next();
             int r = v / w;
@@ -248,7 +248,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
     // 4b) player breadcrumbs: every cell the pawn has walked through
     if (trail_ != 0) {
         painter.setPen(Qt::NoPen);
-        LinkedList<int>::Iterator it = trail_->iterator();
+        IntLinkedList::Cursor it = trail_->cursor();
         while (it.hasNext()) {
             int v = it.next();
             int r = v / w;
@@ -260,14 +260,14 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
 
     // 4c) mines (pixel bombs) and keys (pixel keys), on top of cell fills
     if (mines_ != 0) {
-        LinkedList<int>::Iterator it = mines_->iterator();
+        IntLinkedList::Cursor it = mines_->cursor();
         while (it.hasNext()) {
             int v = it.next();
             drawPixelSprite(painter, kBombPix, offX + (v % w) * cell, offY + (v / w) * cell, cell);
         }
     }
     if (keys_ != 0) {
-        LinkedList<int>::Iterator it = keys_->iterator();
+        IntLinkedList::Cursor it = keys_->cursor();
         while (it.hasNext()) {
             int v = it.next();
             drawPixelSprite(painter, kKeyPix, offX + (v % w) * cell, offY + (v / w) * cell, cell);

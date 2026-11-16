@@ -33,21 +33,21 @@ MainWindow::MainWindow()
     // ---- widgets ----
     canvas_ = new MazeCanvas(this);
 
-    rows_ = new QSpinBox(this);
-    rows_->setRange(1, MazeMatrix::MAX_ROWS);
-    rows_->setValue(15);
-    cols_ = new QSpinBox(this);
-    cols_->setRange(1, MazeMatrix::MAX_COLS);
-    cols_->setValue(15);
-    seed_ = new QSpinBox(this);
-    seed_->setRange(0, 2147483647);
-    seed_->setValue(42);
-    extra_ = new QSpinBox(this);
-    extra_->setRange(0, 400);
-    extra_->setValue(8);
-    librarySeed_ = new QSpinBox(this);
-    librarySeed_->setRange(0, 2147483647);
-    librarySeed_->setValue(42);
+    rowsInput_ = new QSpinBox(this);
+    rowsInput_->setRange(1, MazeMatrix::MAX_ROWS);
+    rowsInput_->setValue(15);
+    colsInput_ = new QSpinBox(this);
+    colsInput_->setRange(1, MazeMatrix::MAX_COLS);
+    colsInput_->setValue(15);
+    seedInput_ = new QSpinBox(this);
+    seedInput_->setRange(0, 2147483647);
+    seedInput_->setValue(42);
+    extraOpeningsInput_ = new QSpinBox(this);
+    extraOpeningsInput_->setRange(0, 400);
+    extraOpeningsInput_->setValue(8);
+    librarySeedInput_ = new QSpinBox(this);
+    librarySeedInput_->setRange(0, 2147483647);
+    librarySeedInput_->setValue(42);
 
     generateButton_ = new QPushButton("Generate maze", this);
     solveButton_ = new QPushButton("Solve (BFS)", this);
@@ -74,10 +74,10 @@ MainWindow::MainWindow()
 
     // ---- layout ----
     QFormLayout* form = new QFormLayout;
-    form->addRow("Rows (1-50):", rows_);
-    form->addRow("Cols (1-50):", cols_);
-    form->addRow("Random seed:", seed_);
-    form->addRow("Extra openings:", extra_);
+    form->addRow("Rows (1-50):", rowsInput_);
+    form->addRow("Cols (1-50):", colsInput_);
+    form->addRow("Random seed:", seedInput_);
+    form->addRow("Extra openings:", extraOpeningsInput_);
 
     QVBoxLayout* side = new QVBoxLayout;
     side->addLayout(form);
@@ -89,7 +89,7 @@ MainWindow::MainWindow()
     side->addWidget(loadButton_);
     side->addSpacing(10);
     side->addWidget(new QLabel("Library lookup seed:", this));
-    side->addWidget(librarySeed_);
+    side->addWidget(librarySeedInput_);
     side->addWidget(insertButton_);
     side->addWidget(searchButton_);
     side->addSpacing(10);
@@ -102,7 +102,7 @@ MainWindow::MainWindow()
     setLayout(top);
 
     // ---- initial state: a closed 15x15 grid is visible ----
-    maze_.reset(rows_->value(), cols_->value());
+    maze_.reset(rowsInput_->value(), colsInput_->value());
     canvas_->setMaze(&maze_);
 }
 
@@ -159,7 +159,7 @@ int MainWindow::starsFor(int collected, int total)
 // Is 'target' reachable from the entrance when every mine is impassable?
 bool MainWindow::reachableAvoidingMines(int target)
 {
-    LinkedList<int> scratch;
+    IntLinkedList scratch;
     return solver_.solve(graph_, 0, target, scratch, mines_.size() ? &mines_ : 0);
 }
 
@@ -200,7 +200,7 @@ void MainWindow::placeKeysAndMines(unsigned int seed)
         mines_.pushBack(v);
         bool ok = reachableAvoidingMines(total - 1);
         if (ok) {
-            LinkedList<int>::Iterator it = keysPlaced_.iterator();
+            IntLinkedList::Cursor it = keysPlaced_.cursor();
             while (ok && it.hasNext())
                 ok = reachableAvoidingMines(it.next());
         }
@@ -230,7 +230,7 @@ void MainWindow::onFrame()
         // generation replay: apply recorded carves to the blank copy
         int left = stepsPerTick_;
         while (left-- > 0 && genCursor_.hasNext()) {
-            const GenStep& s = genCursor_.next();
+            const CarveStep& s = genCursor_.next();
             animMatrix_.removeWall(s.row, s.col, s.side);
             canvas_->setGenerationCursor(s.row, s.col);
             ++playhead_;
@@ -290,12 +290,12 @@ void MainWindow::onFrame()
 void MainWindow::onGenerate()
 {
     stopAnimation();
-    if (!maze_.reset(rows_->value(), cols_->value())) {
+    if (!maze_.reset(rowsInput_->value(), colsInput_->value())) {
         announce("Invalid maze size.");
         return;
     }
-    activeSeed_ = (unsigned int)seed_->value();
-    activeExtra_ = extra_->value();
+    activeSeed_ = (unsigned int)seedInput_->value();
+    activeExtra_ = extraOpeningsInput_->value();
 
     MazeGenerator generator(maze_, activeSeed_);
     generator.generate();
@@ -307,13 +307,13 @@ void MainWindow::onGenerate()
 
     animMatrix_.reset(maze_.rows(), maze_.cols());   // all-wall blank for replay
     canvas_->setMaze(&animMatrix_);
-    genCursor_ = genSteps_.iterator();
+    genCursor_ = genSteps_.cursor();
     playhead_ = 0;
     phase_ = 1;
     stepsPerTick_ = 1 + genSteps_.size() / 200;      // ~4 s at every maze size
     timer_->start(20);
     announce(QString("Carving a %1 x %2 maze (seed %3)...")
-             .arg(rows_->value()).arg(cols_->value()).arg(activeSeed_));
+             .arg(rowsInput_->value()).arg(colsInput_->value()).arg(activeSeed_));
 }
 
 void MainWindow::onSolve()
@@ -331,7 +331,7 @@ void MainWindow::onSolve()
     if (!routeFound_ && mines_.size() > 0)   // defensive: placement should guarantee it
         routeFound_ = solver_.solve(graph_, 0, target, route_);
     solveSteps_ = solver_.steps();
-    solveCursor_ = solveSteps_.iterator();
+    solveCursor_ = solveSteps_.cursor();
 
     playhead_ = 0;
     visited_.clear();
@@ -488,8 +488,8 @@ void MainWindow::onLoad()
     graph_.buildFromMatrix(maze_);
     placeKeysAndMines(activeSeed_);   // deterministic bombs/keys for this maze
     canvas_->setMaze(&maze_);
-    rows_->setValue(maze_.rows());
-    cols_->setValue(maze_.cols());
+    rowsInput_->setValue(maze_.rows());
+    colsInput_->setValue(maze_.cols());
     announce(QString("Loaded %1 x %2 maze (seed %3) — %4 key(s), %5 bomb(s) on the field.")
              .arg(maze_.rows()).arg(maze_.cols()).arg(activeSeed_)
              .arg(keysTotal_).arg(mines_.size()));
@@ -507,7 +507,7 @@ void MainWindow::onInsertInLibrary()
 void MainWindow::onSearchLibrary()
 {
     MazeRecord found;
-    unsigned int query = (unsigned int)librarySeed_->value();
+    unsigned int query = (unsigned int)librarySeedInput_->value();
     if (library_.findBySeed(query, found)) {
         // only trusted saved lives here; insertions come from valid matrices
         stopAnimation();
@@ -517,8 +517,8 @@ void MainWindow::onSearchLibrary()
         graph_.buildFromMatrix(maze_);
         placeKeysAndMines(activeSeed_);   // same seed -> same bombs and keys
         canvas_->setMaze(&maze_);
-        rows_->setValue(maze_.rows());
-        cols_->setValue(maze_.cols());
+        rowsInput_->setValue(maze_.rows());
+        colsInput_->setValue(maze_.cols());
         announce(QString("Seed %1 found in library — maze restored "
                          "(%2 x %3, %4 key(s), %5 bomb(s)).")
                  .arg(found.rows).arg(found.cols)

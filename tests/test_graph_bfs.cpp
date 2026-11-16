@@ -32,11 +32,11 @@ void testGraph()
     CHECK_EQ(graph.rowOf(7), 1);
     CHECK_EQ(graph.colOf(7), 2);
     for (int v = 0; v < 25; ++v) {
-        LinkedList<int>::Iterator it = graph.neighbors(v).iterator();
+        IntLinkedList::Cursor it = graph.neighbors(v).cursor();
         while (it.hasNext()) {
             int u = it.next();
             bool mirrored = false;
-            LinkedList<int>::Iterator back = graph.neighbors(u).iterator();
+            IntLinkedList::Cursor back = graph.neighbors(u).cursor();
             while (back.hasNext())
                 if (back.next() == v)
                     mirrored = true;
@@ -72,7 +72,7 @@ void testGraph()
 
 // T20 helper: route cells must be adjacent through open walls, no repeats
 // (a repeated cell would also disqualify BFS optimality), correct endpoints.
-static bool routeIsValid(const MazeGraph& graph, const LinkedList<int>& route)
+static bool routeIsValid(const MazeGraph& graph, const IntLinkedList& route)
 {
     if (route.isEmpty())
         return false;
@@ -80,7 +80,7 @@ static bool routeIsValid(const MazeGraph& graph, const LinkedList<int>& route)
     for (int i = 0; i < 2500; ++i)
         seen[i] = false;
 
-    LinkedList<int>::Iterator it = route.iterator();
+    IntLinkedList::Cursor it = route.cursor();
     int prev = it.next();
     seen[prev] = true;
     while (it.hasNext()) {
@@ -118,11 +118,11 @@ void testBfs()
     MazeGraph graph;
     graph.buildFromMatrix(m);
     BfsSolver solver;
-    LinkedList<int> route;
+    IntLinkedList route;
     CHECK(solver.solve(graph, 0, 8, route));
     CHECK_EQ(route.size(), 9);
     int expected[9] = { 0, 1, 2, 5, 4, 3, 6, 7, 8 };
-    LinkedList<int>::Iterator it = route.iterator();
+    IntLinkedList::Cursor it = route.cursor();
     for (int i = 0; i < 9; ++i)
         CHECK_EQ(it.next(), expected[i]);
 
@@ -135,9 +135,9 @@ void testBfs()
     MazeGraph gg;
     gg.buildFromMatrix(gen);
     BfsSolver s2;
-    LinkedList<int> route2;
+    IntLinkedList route2;
     CHECK(s2.solve(gg, 0, 99, route2));
-    LinkedList<int>::Iterator itFirst = route2.iterator();
+    IntLinkedList::Cursor itFirst = route2.cursor();
     int first = itFirst.next();
     int last = first;
     while (itFirst.hasNext())
@@ -154,7 +154,7 @@ void testBfs()
     MazeGraph bg;
     bg.buildFromMatrix(blocked);
     BfsSolver s3;
-    LinkedList<int> route3;
+    IntLinkedList route3;
     CHECK(!s3.solve(bg, 0, 3, route3));
     CHECK(route3.isEmpty());
 
@@ -166,7 +166,7 @@ void testBfs()
     MazeGraph gb;
     gb.buildFromMatrix(big);
     BfsSolver s4;
-    LinkedList<int> route4;
+    IntLinkedList route4;
     CHECK(s4.solve(gb, 0, 2499, route4));
     CHECK(routeIsValid(gb, route4));
     CHECK_EQ((int)s4.steps().size() <= 4 * 2500, true);
@@ -177,10 +177,10 @@ void testBfs()
     MazeGraph o;
     o.buildFromMatrix(one);
     BfsSolver s5;
-    LinkedList<int> route5;
+    IntLinkedList route5;
     CHECK(s5.solve(o, 0, 0, route5));
     CHECK_EQ(route5.size(), 1);
-    LinkedList<int>::Iterator only = route5.iterator();
+    IntLinkedList::Cursor only = route5.cursor();
     CHECK_EQ(only.next(), 0);
 
     // T23b: blocked-aware solve — a "mine" choking the only corridor kills
@@ -192,11 +192,11 @@ void testBfs()
     MazeGraph cg;
     cg.buildFromMatrix(corridor);
     BfsSolver cs;
-    LinkedList<int> croute;
+    IntLinkedList croute;
     CHECK(cs.solve(cg, 0, 2, croute));
-    LinkedList<int> mined;
+    IntLinkedList mined;
     mined.pushBack(1);
-    LinkedList<int> broute;
+    IntLinkedList broute;
     CHECK(!cs.solve(cg, 0, 2, broute, &mined));
     CHECK(broute.isEmpty());
     mined.clear();

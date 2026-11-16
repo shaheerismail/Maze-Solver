@@ -32,7 +32,7 @@ void testExtra()
     MazeGraph graph;
     graph.buildFromMatrix(m);
     BfsSolver s;
-    LinkedList<int> route;
+    IntLinkedList route;
     CHECK(s.solve(graph, 0, 99, route));
     CHECK(!route.isEmpty());
 
@@ -77,7 +77,7 @@ void testExtra()
     MazeGraph graphBefore;
     graphBefore.buildFromMatrix(beforeM);
     BfsSolver sb;
-    LinkedList<int> rb;
+    IntLinkedList rb;
     CHECK(sb.solve(graphBefore, 0, 224, rb));
     int lengthBefore = rb.size();
 
@@ -89,7 +89,7 @@ void testExtra()
     MazeGraph graphAfter;
     graphAfter.buildFromMatrix(afterM);
     BfsSolver sa;
-    LinkedList<int> ra;
+    IntLinkedList ra;
     CHECK(sa.solve(graphAfter, 0, 224, ra));
     CHECK((int)ra.size() <= lengthBefore);
     CHECK((int)ra.size() >= 0);

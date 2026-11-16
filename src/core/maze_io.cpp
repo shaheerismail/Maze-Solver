@@ -1,7 +1,8 @@
 #include "maze_io.h"
-#include "linked_list.h"
+#include "string_list.h"
 #include <fstream>
 
+// Decimal text for a non-negative or negative int, built digit by digit.
 std::string MazeIO::toString(int value)
 {
     if (value == 0)
@@ -112,8 +113,8 @@ LoadResult MazeIO::loadFromString(const std::string& text)
     result.seed = 0;
     result.extraPassages = 0;
 
-    // split into lines, dropping a trailing '\r' from CRLF files
-    LinkedList<std::string> lines;
+// Split into lines, dropping a trailing '\r' from CRLF files
+    StringList lines;
     std::string current;
     for (int i = 0; i < (int)text.size(); ++i) {
         char ch = text[i];

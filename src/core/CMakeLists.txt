@@ -1,4 +1,10 @@
 add_library(maze_core STATIC
+    int_linked_list.cpp
+    int_linked_queue.cpp
+    carve_step_list.cpp
+    solve_step_list.cpp
+    maze_record_list.cpp
+    string_list.cpp
     maze_matrix.cpp
     rng.cpp
     maze_generator.cpp

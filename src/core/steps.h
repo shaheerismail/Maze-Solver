@@ -4,8 +4,9 @@
 
 #include <string>
 
-struct GenStep {
-    enum Kind { Carve, Extra } kind;
+// One wall opened during maze generation: a carved passage or an extra opening.
+struct CarveStep {
+    enum Kind { Carve, ExtraOpening } kind;
     int row, col, side;   // wall opened at (row,col) towards 'side'
 };
 

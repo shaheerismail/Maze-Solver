@@ -1,7 +1,13 @@
+// BfsSolver implementation. The search itself is unchanged textbook BFS:
+// seen[] flags, parent[] chain, an IntLinkedQueue frontier — the approved
+// logic; only the containers are now standalone DSA classes.
+
 #include "bfs_solver.h"
 
-bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList<int>& outRoute,
-                      const LinkedList<int>* blockedVertices)
+// BFS from 'source' to 'target'; fills outRoute (source -> target) and the
+// animation step list. Returns true only when the target is reached.
+bool BfsSolver::solve(const MazeGraph& graph, int source, int target, IntLinkedList& outRoute,
+                      const IntLinkedList* blockedVertices)
 {
     steps_.clear();
     outRoute.clear();
@@ -18,7 +24,7 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList
         parent[i] = -1;
     }
 
-    LinkedQueue<int> frontier;
+    IntLinkedQueue frontier;
     seen[source] = 1;
     frontier.enqueue(source);
 
@@ -38,7 +44,7 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList
             found = true;
             break;
         }
-        LinkedList<int>::Iterator it = graph.neighbors(v).iterator();
+        IntLinkedList::Cursor it = graph.neighbors(v).cursor();
         while (it.hasNext()) {
             int w = it.next();
             bool blocked = (blockedVertices != 0 && blockedVertices->contains(w));
@@ -78,7 +84,8 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, LinkedList
     return found;
 }
 
-const LinkedList<SolveStep>& BfsSolver::steps() const
+// Animation record of the most recent solve() call.
+const SolveStepList& BfsSolver::steps() const
 {
     return steps_;
 }

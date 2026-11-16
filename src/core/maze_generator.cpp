@@ -1,10 +1,15 @@
+// MazeGenerator implementation. The seed-controlled carve order is untouched
+// (approved logic); only the step container is now a standalone DSA class.
+
 #include "maze_generator.h"
 
+// Constructor binds the maze to carve and seeds the random stream.
 MazeGenerator::MazeGenerator(MazeMatrix& maze, unsigned int seed)
     : maze_(maze), rng_(seed)
 {
 }
 
+// Close all walls, carve a perfect maze from (0,0), then open entrance/exit.
 void MazeGenerator::generate()
 {
     steps_.clear();
@@ -16,7 +21,8 @@ void MazeGenerator::generate()
     maze_.openOutside(maze_.rows() - 1, maze_.cols() - 1, MazeMatrix::WALL_S); // exit
 }
 
-const LinkedList<GenStep>& MazeGenerator::steps() const
+// Recorded wall openings of the last generate()/openExtraPassages() run.
+const CarveStepList& MazeGenerator::steps() const
 {
     return steps_;
 }
@@ -41,8 +47,8 @@ void MazeGenerator::carve(int row, int col)
         int nr = row + drow;
         int nc = col + dcol;
         if (maze_.inBounds(nr, nc) && !maze_.isVisited(nr, nc)) {
-            GenStep step;
-            step.kind = GenStep::Carve;
+            CarveStep step;
+            step.kind = CarveStep::Carve;
             step.row = row;
             step.col = col;
             step.side = sides[i];
@@ -80,8 +86,8 @@ void MazeGenerator::openExtraPassages(int count)
         int nr = row + drow;
         int nc = col + dcol;
         if (maze_.inBounds(nr, nc) && maze_.hasWall(row, col, side)) {  // interior + closed
-            GenStep step;
-            step.kind = GenStep::Extra;
+            CarveStep step;
+            step.kind = CarveStep::ExtraOpening;
             step.row = row;
             step.col = col;
             step.side = side;

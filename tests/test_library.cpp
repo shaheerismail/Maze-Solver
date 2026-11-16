@@ -59,9 +59,9 @@ void testLibrary()
     CHECK(!lib2.findBySeed(50, out));
     unsigned int leftmostSeed = 0;
     unsigned int rightmostSeed = 0;
-    LinkedList<MazeRecord> sorted;
+    MazeRecordList sorted;
     lib2.inOrder(sorted);
-    LinkedList<MazeRecord>::Iterator it = sorted.iterator();
+    MazeRecordList::Cursor it = sorted.cursor();
     CHECK_EQ(sorted.size(), 4);
     CHECK_EQ(it.next().seed, 30u);
     CHECK_EQ(it.next().seed, 40u);
@@ -76,10 +76,10 @@ void testLibrary()
     unsigned int seeds[6] = { 900, 100, 400, 500, 550, 50 };
     for (int i = 0; i < 6; ++i)
         lib3.insert(makeRecord(seeds[i], "ZZ"));
-    LinkedList<MazeRecord> ordered;
+    MazeRecordList ordered;
     lib3.inOrder(ordered);
     CHECK_EQ(ordered.size(), 6);
-    LinkedList<MazeRecord>::Iterator walk = ordered.iterator();
+    MazeRecordList::Cursor walk = ordered.cursor();
     unsigned int last = 0;
     while (walk.hasNext()) {
         MazeRecord rec = walk.next();

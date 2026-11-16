@@ -7,35 +7,37 @@
 // its walls string). destroy() frees post-order; nothing is shared outside.
 
 #include "steps.h"
-#include "linked_list.h"
+#include "maze_record_list.h"
 
+// Binary search tree storing one MazeRecord per seed.
 class MazeLibrary {
 public:
-    MazeLibrary();
-    MazeLibrary(const MazeLibrary&) = delete;            // owning tree, not copyable
+    MazeLibrary();                              // empty tree
+    MazeLibrary(const MazeLibrary&) = delete;   // owning tree, not copyable
     MazeLibrary& operator=(const MazeLibrary&) = delete;
-    ~MazeLibrary();
+    ~MazeLibrary();                             // frees the whole tree
 
-    void insert(const MazeRecord& record);                // replaces on duplicate seed
-    bool findBySeed(unsigned int seed, MazeRecord& out) const;
-    bool removeBySeed(unsigned int seed);                 // classic 3-case BST delete
-    int size() const;
-    void inOrder(LinkedList<MazeRecord>& out) const;      // ascending by seed
+    void insert(const MazeRecord& record);      // replaces on duplicate seed
+    bool findBySeed(unsigned int seed, MazeRecord& out) const; // false when absent
+    bool removeBySeed(unsigned int seed);       // classic 3-case BST delete
+    int size() const;                           // number of stored mazes
+    void inOrder(MazeRecordList& out) const;    // ascending by seed
 
 private:
+    // One tree node holding a saved maze and its two subtrees.
     struct Node {
         MazeRecord record;
         Node* left;
         Node* right;
     };
 
-    Node* root_;
-    int size_;
+    Node* root_;   // tree root, 0 when the library is empty
+    int size_;     // number of stored mazes
 
-    Node* insert(Node* node, const MazeRecord& record);
-    Node* find(Node* node, unsigned int seed) const;
-    Node* remove(Node* node, unsigned int seed, bool& removed);
+    Node* insert(Node* node, const MazeRecord& record);   // recursive insert/replace
+    Node* find(Node* node, unsigned int seed) const;      // recursive lookup
+    Node* remove(Node* node, unsigned int seed, bool& removed); // recursive delete
     Node* minValueNode(Node* node) const;                 // in-order successor helper
-    void inOrder(Node* node, LinkedList<MazeRecord>& out) const;
-    void destroy(Node* node);
+    void inOrder(Node* node, MazeRecordList& out) const;  // recursive traversal
+    void destroy(Node* node);                             // post-order node freeing
 };
