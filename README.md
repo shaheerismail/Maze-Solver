@@ -10,7 +10,7 @@ Section: BCS-3E
 
 ## Introduction
 
-Maze Solver is a Qt desktop application, written in C++, that generates a maze and finds the shortest route through it. The maze is stored in a 2D array matrix and built with a recursive backtracking algorithm. It is then converted into a graph, and a breadth-first search (BFS) on that graph finds the optimal route from the entrance to the exit. The maze, the search and the final route are shown in a graphical window.
+Maze Solver is a desktop maze game, written in C++, that generates a maze and finds the shortest route through it. The maze is stored in a 2D array matrix and built with a recursive backtracking algorithm. It is then converted into a graph, and a breadth-first search (BFS) on that graph finds the optimal route from the entrance to the exit. The maze, the search and the final route are shown in a graphical window.
 
 Every data structure (matrix, graph, queue, linked list and binary search tree) is implemented from scratch, without the language's built-in containers. The aim is to show how these structures work together in one complete program.
 
@@ -46,9 +46,9 @@ The program is divided into the parts below. Each part has a clear job and a sma
 | **Maze matrix** | 2D array of cells storing walls and open passages; used for generation, drawing and saving. |
 | **Generation** | Recursion and backtracking: carve passages from a start cell, and step back when no unvisited neighbour is left. |
 | **Optimal route** | Custom queue and BFS on the graph; the route is rebuilt from parent links into a linked list. |
-| **Qt GUI** | Qt Widgets window that draws the matrix, animates generation and solving, and holds the controls. |
+| **GUI** | CMake Widgets window that draws the matrix, animates generation and solving, and holds the controls. |
 
-Qt is used only for the window, drawing, timers and file dialogs. Qt's own containers (such as `QVector` or `QQueue`) are not used for any of the project's data structures, and the data structure code is kept separate from the GUI so it can be tested without Qt.
+Qt is used only for the window, drawing, timers and file dialogs. Qt's own containers (such as `QVector` or `QQueue`) are not used for any of the project's data structures, and the data structure code is kept separate from the GUI so it can be tested without Qt. In amjority cases, CMake was utilized for the graphical user interface.
 
 ---
 
