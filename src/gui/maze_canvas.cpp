@@ -3,8 +3,8 @@
 #include <QPainter>
 
 namespace {
-// 8x8 hand-drawn pixel sprites (arcade style, no image files needed).
-// B = bomb body, F = fuse, S = lit-wick spark, K = key metal.
+
+
 const char* kBombPix[8] = {
     "......S.",
     ".....S..",
@@ -80,7 +80,7 @@ MazeCanvas::MazeCanvas(QWidget* parent)
 {
     setMinimumSize(360, 360);
     setMouseTracking(false);
-    setFocusPolicy(Qt::StrongFocus);   // must be focusable to receive key presses
+    setFocusPolicy(Qt::StrongFocus);
 }
 
 void MazeCanvas::setMaze(const MazeMatrix* maze)
@@ -185,7 +185,7 @@ void MazeCanvas::resetOverlays()
     update();
 }
 
-void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
+void MazeCanvas::paintEvent(QPaintEvent* )
 {
     QPainter painter(this);
     painter.fillRect(rect(), QColor(245, 245, 245));
@@ -202,10 +202,10 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
     int offX = (width() - cell * w) / 2;
     int offY = (height() - cell * h) / 2;
 
-    // 1) room fills first, so walls are painted on top
+
     painter.fillRect(QRect(offX, offY, cell * w, cell * h), QColor(255, 255, 255));
 
-    // 2) BFS visited cells (green) — the frontier Microsoft-style trace
+
     if (visited_ != 0) {
         painter.setPen(Qt::NoPen);
         IntLinkedList::Cursor it = visited_->cursor();
@@ -218,7 +218,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
-    // 3) current edge being examined (yellow) — the classical BFS probe
+
     if (edgeTo_ >= 0) {
         int r = edgeTo_ / w;
         int c = edgeTo_ % w;
@@ -232,7 +232,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
                          QPoint(offX + c * cell + cell / 2, offY + r * cell + cell / 2));
     }
 
-    // 4) route so far (red) — entrance -> exit
+
     if (route_ != 0) {
         painter.setPen(Qt::NoPen);
         IntLinkedList::Cursor it = route_->cursor();
@@ -245,7 +245,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
-    // 4b) player breadcrumbs: every cell the pawn has walked through
+
     if (trail_ != 0) {
         painter.setPen(Qt::NoPen);
         IntLinkedList::Cursor it = trail_->cursor();
@@ -258,7 +258,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
-    // 4c) mines (pixel bombs) and keys (pixel keys), on top of cell fills
+
     if (mines_ != 0) {
         IntLinkedList::Cursor it = mines_->cursor();
         while (it.hasNext()) {
@@ -274,7 +274,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
-    // 5) walls
+
     painter.setPen(QPen(QColor(55, 55, 55), 2));
     for (int r = 0; r < h; ++r) {
         for (int c = 0; c < w; ++c) {
@@ -291,7 +291,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
-    // 5b) the wall the last blocked move bounced off (red flash, ~250 ms)
+
     if (blockedSide_ > 0 && blockedRow_ >= 0) {
         int x0 = offX + blockedCol_ * cell;
         int y0 = offY + blockedRow_ * cell;
@@ -308,13 +308,13 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
         }
     }
 
-    // 6) entrance / exit markers on the outside openings
+
     painter.setPen(Qt::NoPen);
     painter.fillRect(QRect(offX + cell / 3, offY - 3, cell / 3, 7), QColor(70, 180, 70));
     painter.fillRect(QRect(offX + (w - 1) * cell + cell / 3,
                            offY + h * cell - 4, cell / 3, 7), QColor(70, 70, 230));
 
-    // 7) generation cursor: the cell the backtracker is carving
+
     if (cursorRow_ >= 0) {
         painter.setPen(QPen(QColor(255, 160, 0), 3));
         painter.setBrush(Qt::NoBrush);
@@ -323,7 +323,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
                             cell / 3, cell / 3);
     }
 
-    // 8) the player's pawn (play mode)
+
     if (playerVertex_ >= 0) {
         int r = playerVertex_ / w;
         int c = playerVertex_ % w;
@@ -334,7 +334,7 @@ void MazeCanvas::paintEvent(QPaintEvent* /*event*/)
                             cell / 3, cell / 3);
     }
 
-    // 9) mine explosion (orange burst with 8 rays)
+
     if (explosionVertex_ >= 0) {
         int r = explosionVertex_ / w;
         int c = explosionVertex_ % w;

@@ -1,6 +1,6 @@
 #pragma once
-// Hand-rolled test harness: CHECK / CHECK_EQ macros plus global counters.
-// No test framework dependency — everything is plain C++.
+
+
 
 #include <cstdio>
 

@@ -1,6 +1,6 @@
-// MazeMatrix implementation. Memory rule: this class is the SOLE owner of the
-// cells_ storage. Every delete[] is paired with its new[]; cells_ is nulled
-// after freeing so double-free is impossible. No exceptions are used.
+
+
+
 
 #include "maze_matrix.h"
 
@@ -75,7 +75,7 @@ void MazeMatrix::sideDelta(int side, int& drow, int& dcol)
 bool MazeMatrix::reset(int rows, int cols)
 {
     if (!isValidSize(rows, cols))
-        return false;  // invalid size: state untouched (see test T02)
+        return false;
     if (rows != rows_ || cols != cols_) {
         freeCells();
         rows_ = rows;
@@ -112,14 +112,14 @@ void MazeMatrix::removeWall(int row, int col, int side)
 {
     if (!inBounds(row, col))
         return;
-    cells_[row][col].walls &= (unsigned char)~side;  // passage is symmetric
+    cells_[row][col].walls &= (unsigned char)~side;
     int drow;
     int dcol;
     sideDelta(side, drow, dcol);
     int nr = row + drow;
     int nc = col + dcol;
     if (inBounds(nr, nc)) {
-        // the neighbour's opposite wall is the very same passage
+
         int opposite = (side == WALL_N) ? WALL_S
                      : (side == WALL_S) ? WALL_N
                      : (side == WALL_E) ? WALL_W
@@ -132,7 +132,7 @@ void MazeMatrix::openOutside(int row, int col, int side)
 {
     if (!inBounds(row, col))
         return;
-    cells_[row][col].walls &= (unsigned char)~side;  // no neighbour: entrance/exit
+    cells_[row][col].walls &= (unsigned char)~side;
 }
 
 void MazeMatrix::setVisited(int row, int col, bool value)
@@ -160,19 +160,19 @@ std::string MazeMatrix::toAscii() const
     std::string out;
     if (rows_ == 0)
         return out;
-    for (int c = 0; c < cols_; ++c) {  // top border
+    for (int c = 0; c < cols_; ++c) {
         out += '+';
         out += hasWall(0, c, WALL_N) ? "---" : "   ";
     }
     out += "+\n";
     for (int r = 0; r < rows_; ++r) {
-        for (int c = 0; c < cols_; ++c) {  // side walls of this row
+        for (int c = 0; c < cols_; ++c) {
             out += hasWall(r, c, WALL_W) ? "|" : " ";
             out += "   ";
         }
         out += hasWall(r, cols_ - 1, WALL_E) ? "|" : " ";
         out += '\n';
-        for (int c = 0; c < cols_; ++c) {  // floor line
+        for (int c = 0; c < cols_; ++c) {
             out += '+';
             out += hasWall(r, c, WALL_S) ? "---" : "   ";
         }
@@ -213,5 +213,5 @@ int MazeMatrix::hexValue(char c)
         return c - '0';
     if (c >= 'A' && c <= 'F')
         return 10 + c - 'A';
-    return 10 + c - 'a';  // 'a'..'f'
+    return 10 + c - 'a';
 }

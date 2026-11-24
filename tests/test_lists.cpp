@@ -8,10 +8,10 @@
 #include "steps.h"
 #include "maze_matrix.h"
 
-// Suite T06–T09b: the standalone DSA containers (no templates in the project).
+
 void testLists()
 {
-    // T06: pushBack then popFront preserves order
+
     IntLinkedList list;
     list.pushBack(1);
     list.pushBack(2);
@@ -24,60 +24,60 @@ void testLists()
     CHECK_EQ(value, 2);
     CHECK(list.popFront(value));
     CHECK_EQ(value, 3);
-    CHECK(!list.popFront(value));  // 4th pop: empty -> false, no crash
+    CHECK(!list.popFront(value));
 
-    // T07: pushFront — head-first insertion (used by BFS route building)
+
     IntLinkedList front;
     front.pushFront(1);
     front.pushFront(2);
     front.pushFront(3);
-    front.popFront(value);  // newest first
+    front.popFront(value);
     CHECK_EQ(value, 3);
     front.popFront(value);
     CHECK_EQ(value, 2);
     CHECK_EQ(front.size(), 1);
 
-    // T07b: contains and removeValue on the standalone int list
+
     IntLinkedList members;
     members.pushBack(5);
     members.pushBack(7);
     members.pushBack(9);
     CHECK(members.contains(7));
     CHECK(!members.contains(8));
-    CHECK(members.removeValue(7));     // middle node unlinked
+    CHECK(members.removeValue(7));
     CHECK_EQ(members.size(), 2);
     CHECK(!members.contains(7));
-    CHECK(!members.removeValue(7));    // already gone
+    CHECK(!members.removeValue(7));
     members.removeValue(5);
     members.removeValue(9);
     CHECK(members.isEmpty());
     members.clear();
     CHECK_EQ(members.size(), 0);
 
-    // T08: deep copy independence
+
     IntLinkedList orig;
     orig.pushBack(10);
     orig.pushBack(20);
-    IntLinkedList copyOf(orig);   // copy constructor
+    IntLinkedList copyOf(orig);
     copyOf.pushBack(30);
-    CHECK_EQ(orig.size(), 2);       // original intact
+    CHECK_EQ(orig.size(), 2);
     CHECK_EQ(copyOf.size(), 3);
     IntLinkedList assigned;
     assigned.pushBack(99);
-    assigned = orig;                // copy assignment clears old nodes
+    assigned = orig;
     assigned.pushBack(40);
-    CHECK_EQ(orig.size(), 2);       // assignment never shares nodes
+    CHECK_EQ(orig.size(), 2);
     CHECK_EQ(assigned.size(), 3);
-    orig = orig;                    // self-assignment is safe
+    orig = orig;
     CHECK_EQ(orig.size(), 2);
 
-    // T09: FIFO order under interleaving (generate, solve, enqueue again)
+
     IntLinkedQueue queue;
     queue.enqueue(1);
     queue.enqueue(2);
     queue.enqueue(3);
     CHECK(!queue.isEmpty());
-    queue.dequeue(value);           // dequeue; enqueue; dequeue; ...
+    queue.dequeue(value);
     CHECK_EQ(value, 1);
     queue.enqueue(4);
     queue.dequeue(value);
@@ -86,16 +86,16 @@ void testLists()
     CHECK_EQ(value, 3);
     queue.dequeue(value);
     CHECK_EQ(value, 4);
-    CHECK(!queue.dequeue(value));   // queue drained safely
+    CHECK(!queue.dequeue(value));
     CHECK_EQ(queue.size(), 0);
-    IntLinkedQueue qc(queue);       // copy of an empty queue
+    IntLinkedQueue qc(queue);
     qc.enqueue(5);
     IntLinkedQueue qc2(qc);
     CHECK_EQ(qc2.size(), 1);
     qc2.dequeue(value);
     CHECK_EQ(value, 5);
 
-    // T09b: step/record/string lists append, walk and copy correctly
+
     CarveStep carveStep;
     carveStep.kind = CarveStep::Carve;
     carveStep.row = 1;
@@ -104,7 +104,7 @@ void testLists()
     CarveStepList genSteps;
     genSteps.pushBack(carveStep);
     CHECK_EQ(genSteps.size(), 1);
-    CarveStepList genCopy(genSteps);   // deep copy of the step list
+    CarveStepList genCopy(genSteps);
     genSteps.clear();
     CHECK_EQ(genSteps.size(), 0);
     CHECK_EQ(genCopy.size(), 1);
@@ -139,6 +139,6 @@ void testLists()
     CHECK_EQ(text, std::string("MAZE_V1"));
     CHECK(lines.popFront(text));
     CHECK_EQ(text, std::string("rows 2"));
-    CHECK(!lines.popFront(text));   // drained safely
+    CHECK(!lines.popFront(text));
     CHECK_EQ(lines.size(), 0);
 }

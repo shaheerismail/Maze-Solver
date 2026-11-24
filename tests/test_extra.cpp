@@ -20,8 +20,8 @@ static int openInteriorPassages(const MazeMatrix& m)
 
 void testExtra()
 {
-    // T24: opening 5 passages on a perfect 10x10 adds exactly 5 interior edges,
-    // and the maze stays connected (BFS still finds a route)
+
+
     MazeMatrix m;
     m.reset(10, 10);
     MazeGenerator g(m, 21);
@@ -36,21 +36,21 @@ void testExtra()
     CHECK(s.solve(graph, 0, 99, route));
     CHECK(!route.isEmpty());
 
-    // T24b: over-requesting is safe — stops at the number of walls available
+
     MazeMatrix small;
     small.reset(2, 2);
     MazeGenerator gs(small, 4);
     gs.generate();
-    gs.openExtraPassages(10);   // only 4 interior walls exist
+    gs.openExtraPassages(10);
     CHECK_EQ(openInteriorPassages(small), 4);
     MazeMatrix tiny;
     tiny.reset(1, 1);
     MazeGenerator gt(tiny, 4);
     gt.generate();
-    gt.openExtraPassages(3);    // no interior walls at all: no-op, no hang
+    gt.openExtraPassages(3);
     CHECK_EQ(openInteriorPassages(tiny), 0);
 
-    // T25: same (seed, count) -> identical maze; different count -> different
+
     MazeMatrix m1;
     m1.reset(12, 12);
     MazeGenerator a(m1, 77);
@@ -69,7 +69,7 @@ void testExtra()
     c.openExtraPassages(8);
     CHECK(m1.toWallString() != m3.toWallString());
 
-    // T26: extra openings can only shorten (or keep) the shortest route
+
     MazeMatrix beforeM;
     beforeM.reset(15, 15);
     MazeGenerator gb(beforeM, 33);

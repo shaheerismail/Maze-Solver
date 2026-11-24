@@ -2,7 +2,7 @@
 #include "string_list.h"
 #include <fstream>
 
-// Decimal text for a non-negative or negative int, built digit by digit.
+
 std::string MazeIO::toString(int value)
 {
     if (value == 0)
@@ -46,7 +46,7 @@ bool MazeIO::parseNonNegativeInt(const std::string& token, int& outValue)
     for (int i = 0; i < (int)token.size(); ++i) {
         if (!isDigitChar(token[i]))
             return false;
-        if (value > 100000000)   // overflow guard; sizes/seeds stay far below
+        if (value > 100000000)
             return false;
         value = value * 10 + (token[i] - '0');
     }
@@ -59,7 +59,7 @@ std::string MazeIO::saveToString(const MazeMatrix& maze, unsigned int seed, int 
     std::string out = "MAZE_V1\n";
     out += "rows " + toString(maze.rows()) + "\n";
     out += "cols " + toString(maze.cols()) + "\n";
-    out += "seed " + toString((int)seed) + "\n";   // GUI caps seeds at INT_MAX
+    out += "seed " + toString((int)seed) + "\n";
     out += "extra " + toString(extraPassages) + "\n";
     std::string cells = maze.toWallString();
     int i = 0;
@@ -94,7 +94,7 @@ bool MazeIO::saveToFile(const std::string& path, const MazeMatrix& maze,
 
 LoadResult MazeIO::loadFromFile(const std::string& path)
 {
-    LoadResult result;   // ok = false by default
+    LoadResult result;
     std::ifstream file(path.c_str());
     if (!file.is_open()) {
         result.error = "cannot open file for reading";
@@ -113,7 +113,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
     result.seed = 0;
     result.extraPassages = 0;
 
-// Split into lines, dropping a trailing '\r' from CRLF files
+
     StringList lines;
     std::string current;
     for (int i = 0; i < (int)text.size(); ++i) {
@@ -127,7 +127,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
             current += ch;
         }
     }
-    if (!current.empty()) {   // final line without newline
+    if (!current.empty()) {
         if (current[current.size() - 1] == '\r')
             current.resize(current.size() - 1);
         lines.pushBack(current);
@@ -135,7 +135,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
 
     int lineNumber = 0;
 
-    // 1) magic
+
     std::string magic;
     if (!lines.popFront(magic)) {
         result.error = "empty file";
@@ -147,7 +147,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
         return result;
     }
 
-    // 2..5) ordered header: rows, cols, seed, extra
+
     int header[4] = { 0, 0, 0, 0 };
     const char* keys[4] = { "rows", "cols", "seed", "extra" };
     for (int h = 0; h < 4; ++h) {
@@ -185,7 +185,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
         return result;
     }
 
-    // 6) grid: exactly rows lines with cols single-hex-digit tokens each
+
     std::string cells;
     for (int r = 0; r < header[0]; ++r) {
         std::string row;
@@ -197,7 +197,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
         int tokenCount = 0;
         int i = 0;
         while (i < (int)row.size()) {
-            if (isSpaceChar(row[i])) {   // runs of whitespace are separators
+            if (isSpaceChar(row[i])) {
                 ++i;
                 continue;
             }
@@ -225,7 +225,7 @@ LoadResult MazeIO::loadFromString(const std::string& text)
         return result;
     }
 
-    // 7) nothing but whitespace after the grid
+
     std::string tail;
     while (lines.popFront(tail)) {
         ++lineNumber;

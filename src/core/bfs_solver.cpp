@@ -1,11 +1,11 @@
-// BfsSolver implementation. The search itself is unchanged textbook BFS:
-// seen[] flags, parent[] chain, an IntLinkedQueue frontier — the approved
-// logic; only the containers are now standalone DSA classes.
+
+
+
 
 #include "bfs_solver.h"
 
-// BFS from 'source' to 'target'; fills outRoute (source -> target) and the
-// animation step list. Returns true only when the target is reached.
+
+
 bool BfsSolver::solve(const MazeGraph& graph, int source, int target, IntLinkedList& outRoute,
                       const IntLinkedList* blockedVertices)
 {
@@ -16,7 +16,7 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, IntLinkedL
     if (source < 0 || source >= n || target < 0 || target >= n)
         return false;
 
-    // per-call scratch: seen flags + parent chain, freed before EVERY return
+
     unsigned char* seen = new unsigned char[n];
     int* parent = new int[n];
     for (int i = 0; i < n; ++i) {
@@ -28,7 +28,7 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, IntLinkedL
     seen[source] = 1;
     frontier.enqueue(source);
 
-    bool found = (source == target);   // 1x1 maze: entrance == exit
+    bool found = (source == target);
     while (!found && !frontier.isEmpty()) {
         int v;
         frontier.dequeue(v);
@@ -66,8 +66,8 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, IntLinkedL
     }
 
     if (found) {
-        // walk the discovery chain from exit back to entrance; pushFront
-        // gives source -> target order directly, no reversal pass needed
+
+
         for (int at = target; at != -1; at = parent[at])
             outRoute.pushFront(at);
 
@@ -79,12 +79,12 @@ bool BfsSolver::solve(const MazeGraph& graph, int source, int target, IntLinkedL
         steps_.pushBack(done);
     }
 
-    delete[] seen;   // single exit point: arrays freed only after every use
+    delete[] seen;
     delete[] parent;
     return found;
 }
 
-// Animation record of the most recent solve() call.
+
 const SolveStepList& BfsSolver::steps() const
 {
     return steps_;

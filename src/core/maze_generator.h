@@ -1,29 +1,29 @@
 #pragma once
-// MazeGenerator — recursive backtracking maze carving.
-// It holds the caller's maze by reference. generate() first closes all walls
-// (reset) and then carves a perfect maze, records every carved wall into a
-// CarveStepList (for GUI replay), and opens the entrance/exit to the outside.
+
+
+
+
 
 #include "maze_matrix.h"
 #include "rng.h"
 #include "carve_step_list.h"
 #include "steps.h"
 
-// Depth-first maze carver driven by the seeded RandomLCG.
+
 class MazeGenerator {
 public:
-    MazeGenerator(MazeMatrix& maze, unsigned int seed); // bind maze + carving seed
+    MazeGenerator(MazeMatrix& maze, unsigned int seed);
 
-    void generate();                     // perfect maze + entrance/exit openings
-    void openExtraPassages(int count);   // random interior walls removed ('ExtraOpening' steps);
-                                         // same (seed, count) pair -> same result
+    void generate();
+    void openExtraPassages(int count);
 
-    const CarveStepList& steps() const;  // recorded wall openings of the last run
+
+    const CarveStepList& steps() const;
 
 private:
-    MazeMatrix& maze_;        // the maze being carved (caller-owned)
-    RandomLCG rng_;           // seeded random stream for reproducible mazes
-    CarveStepList steps_;     // every wall opened, in carving order
+    MazeMatrix& maze_;
+    RandomLCG rng_;
+    CarveStepList steps_;
 
-    void carve(int row, int col);        // recursive backtracking body
+    void carve(int row, int col);
 };

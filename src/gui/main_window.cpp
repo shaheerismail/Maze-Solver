@@ -30,7 +30,7 @@ MainWindow::MainWindow()
     , activeSeed_(0)
     , activeExtra_(0)
 {
-    // ---- widgets ----
+
     canvas_ = new MazeCanvas(this);
 
     rowsInput_ = new QSpinBox(this);
@@ -72,7 +72,7 @@ MainWindow::MainWindow()
     connect(insertButton_, &QPushButton::clicked, this, &MainWindow::onInsertInLibrary);
     connect(searchButton_, &QPushButton::clicked, this, &MainWindow::onSearchLibrary);
 
-    // ---- layout ----
+
     QFormLayout* form = new QFormLayout;
     form->addRow("Rows (1-50):", rowsInput_);
     form->addRow("Cols (1-50):", colsInput_);
@@ -101,7 +101,7 @@ MainWindow::MainWindow()
     top->addLayout(side, 0);
     setLayout(top);
 
-    // ---- initial state: a closed 15x15 grid is visible ----
+
     maze_.reset(rowsInput_->value(), colsInput_->value());
     canvas_->setMaze(&maze_);
 }
@@ -144,7 +144,7 @@ MazeRecord MainWindow::recordOfCurrentMaze()
     return record;
 }
 
-// Star rating exactly per the spec: all keys -> 3, half -> 2, a quarter -> 1.
+
 int MainWindow::starsFor(int collected, int total)
 {
     if (total <= 0 || collected >= total)
@@ -156,16 +156,16 @@ int MainWindow::starsFor(int collected, int total)
     return 0;
 }
 
-// Is 'target' reachable from the entrance when every mine is impassable?
+
 bool MainWindow::reachableAvoidingMines(int target)
 {
     IntLinkedList scratch;
     return solver_.solve(graph_, 0, target, scratch, mines_.size() ? &mines_ : 0);
 }
 
-// Seed-deterministic game field: bombs first (each rejected if it would bury
-// a key or cut the maze off), then keys (each must be reachable avoiding all
-// mines). Same (maze, seed) -> identical layout on any machine.
+
+
+
 void MainWindow::placeKeysAndMines(unsigned int seed)
 {
     mines_.clear();
@@ -180,9 +180,9 @@ void MainWindow::placeKeysAndMines(unsigned int seed)
 
     const int total = maze_.rows() * maze_.cols();
     if (total < 16)
-        return;   // tiny mazes (incl. 1x1) carry no items
+        return;
 
-    RandomLCG rng(seed ^ 2463534242u);   // decorrelated from the carving stream
+    RandomLCG rng(seed ^ 2463534242u);
 
     int mineTarget = total / 14;
     if (mineTarget < 2) mineTarget = 2;
@@ -191,8 +191,8 @@ void MainWindow::placeKeysAndMines(unsigned int seed)
     if (keyTarget < 3) keyTarget = 3;
     if (keyTarget > 30) keyTarget = 30;
 
-    // 1) mines: never on entrance (0) or exit (total-1); each candidate must
-    //    keep the exit AND every placed key reachable
+
+
     for (int placed = 0, attempts = 0; placed < mineTarget && attempts < mineTarget * 20; ++attempts) {
         const int v = rng.nextInt(1, total - 2);
         if (mines_.contains(v) || keysPlaced_.contains(v))
@@ -207,10 +207,10 @@ void MainWindow::placeKeysAndMines(unsigned int seed)
         if (ok)
             ++placed;
         else
-            mines_.removeValue(v);   // would strangle a route: not fair, reject
+            mines_.removeValue(v);
     }
 
-    // 2) keys: distinct cells, each reachable from the entrance avoiding mines
+
     for (int placed = 0, attempts = 0; placed < keyTarget && attempts < keyTarget * 20; ++attempts) {
         const int v = rng.nextInt(1, total - 2);
         if (mines_.contains(v) || keysPlaced_.contains(v))
@@ -221,13 +221,13 @@ void MainWindow::placeKeysAndMines(unsigned int seed)
         else
             keysPlaced_.removeValue(v);
     }
-    keysLeft_ = keysPlaced_;   // full display until the first play attempt
+    keysLeft_ = keysPlaced_;
 }
 
 void MainWindow::onFrame()
 {
     if (phase_ == 1) {
-        // generation replay: apply recorded carves to the blank copy
+
         int left = stepsPerTick_;
         while (left-- > 0 && genCursor_.hasNext()) {
             const CarveStep& s = genCursor_.next();
@@ -237,7 +237,7 @@ void MainWindow::onFrame()
         }
         if (!genCursor_.hasNext()) {
             timer_->stop();
-            canvas_->setMaze(&maze_);   // animMatrix_ + entrance/exit openings
+            canvas_->setMaze(&maze_);
             canvas_->setGenerationCursor(-1, -1);
             phase_ = 0;
             announce(QString("Maze ready (seed %1, %2 extra opening(s)): "
@@ -247,7 +247,7 @@ void MainWindow::onFrame()
                      .arg(keysTotal_).arg(mines_.size()));
         }
     } else if (phase_ == 2) {
-        // BFS replay: tint dequeued vertices, probe the checked edge
+
         int left = stepsPerTick_;
         while (left-- > 0 && solveCursor_.hasNext()) {
             const SolveStep& s = solveCursor_.next();
@@ -273,7 +273,7 @@ void MainWindow::onFrame()
             }
         }
     } else if (phase_ == 3) {
-        // route replay: reveal the shortest route entrance -> exit
+
         routeCount_ += stepsPerTick_;
         if (routeCount_ > route_.size())
             routeCount_ = route_.size();
@@ -301,16 +301,16 @@ void MainWindow::onGenerate()
     generator.generate();
     if (activeExtra_ > 0)
         generator.openExtraPassages(activeExtra_);
-    genSteps_ = generator.steps();          // copy of the recorded carve sequence
+    genSteps_ = generator.steps();
     graph_.buildFromMatrix(maze_);
-    placeKeysAndMines(activeSeed_);         // bombs + keys laid out for this maze
+    placeKeysAndMines(activeSeed_);
 
-    animMatrix_.reset(maze_.rows(), maze_.cols());   // all-wall blank for replay
+    animMatrix_.reset(maze_.rows(), maze_.cols());
     canvas_->setMaze(&animMatrix_);
     genCursor_ = genSteps_.cursor();
     playhead_ = 0;
     phase_ = 1;
-    stepsPerTick_ = 1 + genSteps_.size() / 200;      // ~4 s at every maze size
+    stepsPerTick_ = 1 + genSteps_.size() / 200;
     timer_->start(20);
     announce(QString("Carving a %1 x %2 maze (seed %3)...")
              .arg(rowsInput_->value()).arg(colsInput_->value()).arg(activeSeed_));
@@ -323,12 +323,12 @@ void MainWindow::onSolve()
         return;
     }
     stopAnimation();
-    canvas_->setMaze(&maze_);   // BFS never modifies the maze
+    canvas_->setMaze(&maze_);
 
-    int target = graph_.vertexCount() - 1;   // entrance = vertex 0, exit = last
-    // BFS too respects the mines: the overlay route is the bomb-safe optimum
+    int target = graph_.vertexCount() - 1;
+
     routeFound_ = solver_.solve(graph_, 0, target, route_, mines_.size() ? &mines_ : 0);
-    if (!routeFound_ && mines_.size() > 0)   // defensive: placement should guarantee it
+    if (!routeFound_ && mines_.size() > 0)
         routeFound_ = solver_.solve(graph_, 0, target, route_);
     solveSteps_ = solver_.steps();
     solveCursor_ = solveSteps_.cursor();
@@ -351,24 +351,24 @@ void MainWindow::onPlay()
         return;
     }
     stopAnimation();
-    canvas_->setMaze(&maze_);      // show the real maze, not the replay copy
+    canvas_->setMaze(&maze_);
 
     playMode_ = true;
     won_ = false;
     dead_ = false;
     moves_ = 0;
-    playerVertex_ = 0;             // the pawn starts at the entrance (top-left)
+    playerVertex_ = 0;
     playerTrail_.clear();
     playerTrail_.pushBack(0);
-    keysLeft_ = keysPlaced_;       // fresh attempt: every key back on the field
+    keysLeft_ = keysPlaced_;
     keysCollected_ = 0;
     canvas_->setPlayer(0);
     canvas_->setTrail(&playerTrail_);
     canvas_->setExplosion(-1);
-    canvas_->setFocus();           // the canvas takes the keyboard
+    canvas_->setFocus();
 
     if (graph_.vertexCount() == 1) {
-        won_ = true;               // 1x1: entrance IS the exit
+        won_ = true;
         announce("1x1 maze: the entrance IS the exit — 3 stars, obviously!");
         return;
     }
@@ -382,7 +382,7 @@ void MainWindow::onPlay()
 void MainWindow::onMoveRequested(int side)
 {
     if (!playMode_ || won_ || dead_)
-        return;                    // keys only move the pawn while alive in play mode
+        return;
 
     const int cols = maze_.cols();
     const int rows = maze_.rows();
@@ -396,7 +396,7 @@ void MainWindow::onMoveRequested(int side)
     const int nc = c + dcol;
 
     if (maze_.hasWall(r, c, side) || nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
-        // bumped into a wall (or the outside): flash it red and stay put
+
         canvas_->setBlockedWall(r, c, side);
         QTimer::singleShot(250, this, [this]() { canvas_->setBlockedWall(-1, -1, -1); });
         announce(QString("Blocked by a wall — find another way. (%1 move(s) so far)")
@@ -407,15 +407,15 @@ void MainWindow::onMoveRequested(int side)
     playerVertex_ = nr * cols + nc;
     ++moves_;
     playerTrail_.pushBack(playerVertex_);
-    if (playerTrail_.size() > 5000) { // wandering forever? keep it bounded
-        int dropped;                  // (oldest breadcrumb quietly drops)
+    if (playerTrail_.size() > 5000) {
+        int dropped;
         playerTrail_.popFront(dropped);
     }
     canvas_->setPlayer(playerVertex_);
     canvas_->setTrail(&playerTrail_);
     canvas_->setBlockedWall(-1, -1, -1);
 
-    // stepped on a mine? -> instant game over
+
     if (mines_.contains(playerVertex_)) {
         dead_ = true;
         canvas_->setExplosion(playerVertex_);
@@ -426,19 +426,19 @@ void MainWindow::onMoveRequested(int side)
         return;
     }
 
-    // stepped on a key? -> collect it
+
     const bool keyGot = keysLeft_.removeValue(playerVertex_);
     if (keyGot)
         ++keysCollected_;
 
     const int exitVertex = rows * cols - 1;
     if (playerVertex_ == exitVertex) {
-        won_ = true;   // payoff: overlay the bomb-safe BFS optimum
+        won_ = true;
         route_.clear();
         solver_.solve(graph_, 0, exitVertex, route_, mines_.size() ? &mines_ : 0);
         if (route_.isEmpty())
             solver_.solve(graph_, 0, exitVertex, route_);
-        if (route_.isEmpty())     // degenerate single-cell walk
+        if (route_.isEmpty())
             route_.pushBack(playerVertex_);
         canvas_->setRoute(&route_, route_.size());
 
@@ -481,12 +481,12 @@ void MainWindow::onLoad()
                  .arg(QString::fromStdString(result.error)));
         return;
     }
-    stopAnimation();                          // fail-atomic swap-in
+    stopAnimation();
     maze_ = result.maze;
     activeSeed_ = result.seed;
     activeExtra_ = result.extraPassages;
     graph_.buildFromMatrix(maze_);
-    placeKeysAndMines(activeSeed_);   // deterministic bombs/keys for this maze
+    placeKeysAndMines(activeSeed_);
     canvas_->setMaze(&maze_);
     rowsInput_->setValue(maze_.rows());
     colsInput_->setValue(maze_.cols());
@@ -509,13 +509,13 @@ void MainWindow::onSearchLibrary()
     MazeRecord found;
     unsigned int query = (unsigned int)librarySeedInput_->value();
     if (library_.findBySeed(query, found)) {
-        // only trusted saved lives here; insertions come from valid matrices
+
         stopAnimation();
         maze_ = MazeMatrix::fromWallString(found.rows, found.cols, found.walls);
         activeSeed_ = found.seed;
         activeExtra_ = found.extraPassages;
         graph_.buildFromMatrix(maze_);
-        placeKeysAndMines(activeSeed_);   // same seed -> same bombs and keys
+        placeKeysAndMines(activeSeed_);
         canvas_->setMaze(&maze_);
         rowsInput_->setValue(maze_.rows());
         colsInput_->setValue(maze_.cols());

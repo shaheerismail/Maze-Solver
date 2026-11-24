@@ -12,9 +12,9 @@ void RandomLCG::reseed(unsigned int seed)
 
 unsigned int RandomLCG::next()
 {
-    // Classic C-style LCG: wraps in unsigned int arithmetic, fully deterministic.
+
     state_ = state_ * 1103515245u + 12345u;
-    return state_ >> 16;   // high 16 bits change fastest
+    return state_ >> 16;
 }
 
 int RandomLCG::nextInt(int lo, int hiInclusive)
